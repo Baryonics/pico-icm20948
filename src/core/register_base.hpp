@@ -43,7 +43,7 @@ namespace icm20948::registers
         constexpr static uint8_t address = Address;
         constexpr static UserBank user_bank = UB;
         constexpr static AccessT access = Access;
-        uint8_t bits{ 0 };
+        RegSizeT bits{ 0 };
 
         template <uint8_t pos>
             requires(pos < 8 and (access == AccessT::rw or access == AccessT::w))
@@ -58,7 +58,6 @@ namespace icm20948::registers
             requires(std::is_enum_v<T> and from < to and to < 8 and (access == AccessT::rw or access == AccessT::w))
         RegBase& set_field(BitField<from, to>, T value)
         {
-
             constexpr auto width = uint8_t{ (to - from + 1U) };
             auto mask = RegSizeT{ ((1U << width) - 1U) << from };
             bits = (bits & ~mask) | (((std::to_underlying(value) << from)) & mask);
@@ -73,15 +72,21 @@ namespace icm20948::registers
         }
 
         template <uint8_t from, uint8_t to, typename T>
-            requires(std::is_enum_v<T> and from < to and to < 8 and (access == AccessT::rw or access == AccessT::w))
+            requires(std::is_enum_v<T> and from < to and to < 8 and (access == AccessT::rw or access == AccessT::r))
         T get_field(BitField<from, to>)
         {
-
             constexpr auto width = uint8_t{ (to - from + 1U) };
             auto mask = RegSizeT{ ((1U << width) - 1U) << from };
 
             return static_cast<T>((mask & bits) >> from);
         }
+    };
+
+    template <typename T>
+    concept reg_type = requires {
+        { T::address } -> std::convertible_to<uint8_t>;
+        { T::user_bank } -> std::same_as<const UserBank&>;
+        { T::access } -> std::same_as<const AccessT&>;
     };
 
 } // namespace icm20948::registers
