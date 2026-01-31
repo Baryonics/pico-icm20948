@@ -35,7 +35,7 @@ namespace icm20948
             RegType reg{};
             uint8_t bank_sel[2] = { registers::addresses::REG_BANK_SEL, static_cast<uint8_t>(RegType::user_bank) };
             i2c_write_blocking(i2c_, address, bank_sel, 1, false);
-            i2c_write_blocking(i2c_, address, &reg_addr, 1, true);
+            i2c_write_blocking(i2c_, address, &reg_addr, 1, false);
             i2c_read_blocking(i2c_, address, &reg.bits, sizeof(reg.bits), false);
             return reg;
         }

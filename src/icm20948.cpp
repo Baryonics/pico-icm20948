@@ -14,8 +14,15 @@ namespace icm20948
 
     auto ICM20948::test_read() -> uint8_t
     {
-        auto int_stat = registers::INT_STATUS{};
-        int_stat = i2c_instance_.read<registers::INT_STATUS>();
-        return int_stat.bits;
+        auto who_am_i = registers::WHO_AM_I{};
+        who_am_i = i2c_instance_.read<registers::WHO_AM_I>();
+        return who_am_i.bits;
+    }
+
+    auto ICM20948::read_int_status() -> uint8_t
+    {
+        auto int_status = registers::INT_STATUS{};
+        int_status = i2c_instance_.read<registers::INT_STATUS>();
+        return int_status.bits;
     }
 } // namespace icm20948

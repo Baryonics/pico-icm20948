@@ -4,6 +4,12 @@
 #include <cstdint>
 namespace icm20948::registers
 {
+
+    struct WHO_AM_I : RegBase<addresses::WHO_AM_I, UserBank::UB0, AccessT::r>
+    {
+        BitField<0, 7> WHO_I_AM;
+    };
+
     struct USER_CTRL : RegBase<addresses::USER_CTRL, UserBank::UB0, AccessT::rw>
     {
         Bit<7> DMP_EN{};
