@@ -2,8 +2,13 @@
 #include "register_base.hpp"
 #include "register_map.hpp"
 #include <cstdint>
+
 namespace icm20948::registers
 {
+    struct REG_BANK_SEL : RegBase<addresses::REG_BANK_SEL, UserBank::UB0, AccessT::rw>
+    {
+        BitField<4, 5> USER_BANK{};
+    };
 
     struct WHO_AM_I : RegBase<addresses::WHO_AM_I, UserBank::UB0, AccessT::r>
     {

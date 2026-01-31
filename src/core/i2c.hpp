@@ -2,6 +2,7 @@
 #include "core/register_base.hpp"
 #include "hardware/i2c.h"
 #include "register_map.hpp"
+#include "registers.hpp"
 #include <cstdint>
 #include <cstring>
 
@@ -10,7 +11,22 @@ namespace icm20948
     class I2C
     {
         i2c_inst_t* i2c_;
+        registers::UserBank current_ub_{};
         constexpr static uint8_t address = 0b1101000;
+
+        void select_user_bank(registers::UserBank ub)
+        {
+            if (current_ub_ == ub)
+            {
+                return;
+            }
+            auto bank_sel = registers::REG_BANK_SEL{};
+            bank_sel.set_field(bank_sel.USER_BANK, ub);
+
+            uint8_t buffer[2] = { bank_sel.address, bank_sel.bits };
+            i2c_write_blocking(i2c_, address, buffer, 2, false);
+            current_ub_ = ub;
+        }
 
       public:
         I2C() = default;
@@ -24,7 +40,8 @@ namespace icm20948
             uint8_t buffer[1 + sizeof(reg.bits)]{};
             buffer[0] = RegType::address;
             memcpy(&buffer[1], &reg.bits, sizeof(reg.bits)); // dev note: remember to correct endianess
-            i2c_write_blocking(&i2c_, address, buffer, sizeof(buffer), false);
+            select_user_bank(RegType::user_bank);
+            i2c_write_blocking(i2c_, address, buffer, sizeof(buffer), false);
         }
 
         template <typename RegType>
@@ -33,9 +50,8 @@ namespace icm20948
         {
             uint8_t reg_addr = RegType::address;
             RegType reg{};
-            uint8_t bank_sel[2] = { registers::addresses::REG_BANK_SEL, static_cast<uint8_t>(RegType::user_bank) };
-            i2c_write_blocking(i2c_, address, bank_sel, 1, false);
-            i2c_write_blocking(i2c_, address, &reg_addr, 1, false);
+            select_user_bank(RegType::user_bank);
+            i2c_write_blocking(i2c_, address, &reg_addr, 1, true);
             i2c_read_blocking(i2c_, address, &reg.bits, sizeof(reg.bits), false);
             return reg;
         }

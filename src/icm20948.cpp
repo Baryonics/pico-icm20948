@@ -25,4 +25,6 @@ namespace icm20948
         int_status = i2c_instance_.read<registers::INT_STATUS>();
         return int_status.bits;
     }
+
+    void ICM20948::set_int() {}
 } // namespace icm20948

@@ -21,5 +21,6 @@ namespace icm20948
 
         uint8_t test_read();
         uint8_t read_int_status();
+        void set_int();
     };
 } // namespace icm20948
