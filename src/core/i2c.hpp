@@ -1,7 +1,6 @@
 #pragma once
 #include "core/register_base.hpp"
 #include "hardware/i2c.h"
-#include "register_map.hpp"
 #include "registers.hpp"
 #include <cstdint>
 #include <cstring>
@@ -10,7 +9,7 @@ namespace icm20948
 {
     class I2C
     {
-        i2c_inst_t* i2c_;
+        i2c_inst_t* i2c_{};
         registers::UserBank current_ub_{};
         constexpr static uint8_t address = 0b1101000;
 

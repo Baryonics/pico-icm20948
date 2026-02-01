@@ -95,8 +95,8 @@ namespace icm20948::registers::addresses
     inline constexpr uint8_t XG_OFFS_USRL = 0x04;
     inline constexpr uint8_t YG_OFFS_USRH = 0x05;
     inline constexpr uint8_t YG_OFFS_USRL = 0x06;
-    inline constexpr uint8_t Z_OFFS_USRH = 0x07;
-    inline constexpr uint8_t Z_OFFS_USRL = 0x08;
+    inline constexpr uint8_t ZG_OFFS_USRH = 0x07;
+    inline constexpr uint8_t ZG_OFFS_USRL = 0x08;
     inline constexpr uint8_t ODR_ALIGN_EN = 0x09;
     inline constexpr uint8_t ACCEL_SMPLRT_DIV_1 = 0x10;
     inline constexpr uint8_t ACCEL_SMPLRT_DIV_2 = 0x11;
