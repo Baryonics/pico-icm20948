@@ -14,7 +14,7 @@ namespace icm20948
     class I2C
     {
         i2c_inst_t* i2c_{};
-        registers::UserBank current_ub_{};
+        registers::UserBank current_ub_ = registers::UserBank::UB0;
         constexpr static uint8_t address = 0b1101000;
 
         void select_user_bank(registers::UserBank ub)
@@ -55,7 +55,9 @@ namespace icm20948
             RegType reg{};
             select_user_bank(RegType::user_bank);
             i2c_write_blocking(i2c_, address, &reg_addr, 1, true);
-            i2c_read_blocking(i2c_, address, &reg.bits, sizeof(reg.bits), false);
+            uint8_t buffer[sizeof(reg.bits)]{};
+            i2c_read_blocking(i2c_, address, buffer, sizeof(reg.bits), false);
+            memcpy(&reg.bits, buffer, sizeof(reg.bits));
             return reg;
         }
     };

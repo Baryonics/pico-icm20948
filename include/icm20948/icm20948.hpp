@@ -11,10 +11,13 @@ namespace icm20948
 {
     struct ICM20948
     {
+        I2C i2c_instance_;
         ICM20948(i2c_inst_t* i2c_instance);
 
-        I2C i2c_instance_;
+        uint8_t who_am_i();
 
         void enable_magnetometer();
+
+        uint16_t get_temp();
     };
 } // namespace icm20948
