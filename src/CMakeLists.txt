@@ -7,7 +7,7 @@ target_include_directories(pico_icm_20948
   PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}
   PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/core
+    ${CMAKE_CURRENT_LIST_DIR}/registers
     ${CMAKE_CURRENT_LIST_DIR}/imu
 )
 
