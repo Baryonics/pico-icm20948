@@ -37,4 +37,11 @@ namespace icm20948
 
     auto ICM20948::get_gyro_z() -> uint16_t { return get_value<registers::GYRO_ZOUT>(); }
 
+    /** mag getter **/
+    auto ICM20948::get_mag_x() -> uint16_t { return 0; };
+
+    auto ICM20948::get_mag_y() -> uint16_t { return 0; };
+
+    auto ICM20948::get_mag_z() -> uint16_t { return 0; };
+
 } // namespace icm20948

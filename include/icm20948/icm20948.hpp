@@ -37,5 +37,9 @@ namespace icm20948
         uint16_t get_gyro_x();
         uint16_t get_gyro_y();
         uint16_t get_gyro_z();
+
+        uint16_t get_mag_x();
+        uint16_t get_mag_y();
+        uint16_t get_mag_z();
     };
 } // namespace icm20948
