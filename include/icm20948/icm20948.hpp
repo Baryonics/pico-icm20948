@@ -1,7 +1,7 @@
 #pragma once
 
 #include "i2c.hpp"
-#include "register_base.hpp"
+#include "registers/register_base.hpp"
 // #include "registers/userbank1.hpp"
 // #include "registers/userbank2.hpp"
 // #include "registers/userbank3.hpp"
@@ -22,24 +22,24 @@ namespace icm20948
 
         template <typename ValType>
             requires registers::reg_type<ValType>
-        uint16_t get_value()
+        int16_t get_value()
         {
             auto val_reg = i2c_instance_.read<ValType>();
-            return std::byteswap(val_reg.bits);
+            return static_cast<int16_t>(std::byteswap(val_reg.bits));
         }
 
-        uint16_t get_temp();
+        int16_t get_temp();
 
-        uint16_t get_acc_x();
-        uint16_t get_acc_y();
-        uint16_t get_acc_z();
+        int16_t get_acc_x();
+        int16_t get_acc_y();
+        int16_t get_acc_z();
 
-        uint16_t get_gyro_x();
-        uint16_t get_gyro_y();
-        uint16_t get_gyro_z();
+        int16_t get_gyro_x();
+        int16_t get_gyro_y();
+        int16_t get_gyro_z();
 
-        uint16_t get_mag_x();
-        uint16_t get_mag_y();
-        uint16_t get_mag_z();
+        int16_t get_mag_x();
+        int16_t get_mag_y();
+        int16_t get_mag_z();
     };
 } // namespace icm20948

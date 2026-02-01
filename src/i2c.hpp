@@ -8,6 +8,8 @@
 #include "registers/userbank3.hpp"
 #include <cstdint>
 #include <cstring>
+#include <pico/stdio.h>
+#include <stdio.h>
 
 namespace icm20948
 {
@@ -27,7 +29,11 @@ namespace icm20948
             bank_sel.set_field(bank_sel.USER_BANK, ub);
 
             uint8_t buffer[2] = { bank_sel.address, bank_sel.bits };
-            i2c_write_blocking(i2c_, address, buffer, 2, false);
+            auto err = i2c_write_blocking(i2c_, address, buffer, 2, false);
+            // if (err != 1)
+            // {
+            //     printf("I2C ERR  %d\n", err);
+            // }
             current_ub_ = ub;
         }
 
@@ -44,7 +50,11 @@ namespace icm20948
             buffer[0] = RegType::address;
             memcpy(&buffer[1], &reg.bits, sizeof(reg.bits)); // dev note: remember to correct endianess
             select_user_bank(RegType::user_bank);
-            i2c_write_blocking(i2c_, address, buffer, sizeof(buffer), false);
+            auto err = i2c_write_blocking(i2c_, address, buffer, sizeof(buffer), false);
+            // if (err != 1)
+            // {
+            //     printf("I2C ERR  %d\n", err);
+            // }
         }
 
         template <typename RegType>
@@ -54,9 +64,11 @@ namespace icm20948
             uint8_t reg_addr = RegType::address;
             RegType reg{};
             select_user_bank(RegType::user_bank);
-            i2c_write_blocking(i2c_, address, &reg_addr, 1, true);
+            auto w = i2c_write_blocking(i2c_, address, &reg_addr, 1, true);
             uint8_t buffer[sizeof(reg.bits)]{};
-            i2c_read_blocking(i2c_, address, buffer, sizeof(reg.bits), false);
+            auto r = i2c_read_blocking(i2c_, address, buffer, sizeof(reg.bits), false);
+            // if (w != 1 || r != sizeof(reg.bits))
+            //     printf("I2C ERR w=%d r=%d\n", w, r);
             memcpy(&reg.bits, buffer, sizeof(reg.bits));
             return reg;
         }
