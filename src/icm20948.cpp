@@ -6,6 +6,8 @@
 
 namespace icm20948
 {
+    ICM20948::ICM20948(i2c_inst_t* i2c_instance) { i2c_instance_ = i2c_instance; }
+
     void ICM20948::write()
     {
         // i2c.write(usr_ctrl);

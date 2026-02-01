@@ -179,7 +179,7 @@ namespace icm20948::registers
         BitField<0, 15> VALUE{};
     };
 
-    struct GYRO_zOUT : RegBase<addresses::GYRO_ZOUT_H, UserBank::UB0, AccessT::r, uint16_t>
+    struct GYRO_ZOUT : RegBase<addresses::GYRO_ZOUT_H, UserBank::UB0, AccessT::r, uint16_t>
     {
         BitField<0, 15> VALUE{};
     };
@@ -271,7 +271,12 @@ namespace icm20948::registers
         Bit<0> TEMP_FIFO_EN{};
     };
 
-    struct FIFO_RST : RegBase<addresses::FIFO_RST, UserBank::UB0, AccessT::rw>
+    struct FIFO_RST : RegBase<addresses::FIFO_MODE, UserBank::UB0, AccessT::rw>
+    {
+        BitField<0, 4> FIFO_RESET{};
+    };
+
+    struct FIFO_MODE : RegBase<addresses::FIFO_RST, UserBank::UB0, AccessT::rw>
     {
         enum class mode : uint8_t
         {
@@ -432,7 +437,7 @@ namespace icm20948::registers
         Bit<0> ACCEL_INTEL_MODE_INT{};
     };
 
-    struct ACCEL_WHOM_THR : RegBase<addresses::ACCEL_WOM_THR, UserBank::UB2, AccessT::rw>
+    struct ACCEL_WOM_THR : RegBase<addresses::ACCEL_WOM_THR, UserBank::UB2, AccessT::rw>
     {
         BitField<0, 7> WOM_THRESHOLD{};
     };
@@ -566,7 +571,7 @@ namespace icm20948::registers
         BitField<0, 3> I2C_SLV1_LENG{};
     };
 
-    struct I2C_SLV0_D1 : RegBase<addresses::I2C_SLV1_DO, UserBank::UB3, AccessT::rw>
+    struct I2C_SLV1_DO : RegBase<addresses::I2C_SLV1_DO, UserBank::UB3, AccessT::rw>
     {
         BitField<0, 7> DO{};
     };
