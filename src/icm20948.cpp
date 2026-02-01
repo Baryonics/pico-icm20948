@@ -1,6 +1,5 @@
 #include "i2c.hpp"
 #include "userbank0.hpp"
-#include <bit>
 #include <cstdint>
 #include <hardware/i2c.h>
 #include <icm20948/icm20948.hpp>
@@ -22,10 +21,20 @@ namespace icm20948
 
     void ICM20948::enable_magnetometer() {}
 
-    auto ICM20948::get_temp() -> uint16_t
-    {
-        auto temp_reg = i2c_instance_.read<registers::TEMP_OUT>();
-        return std::byteswap(temp_reg.bits);
-    }
+    auto ICM20948::get_temp() -> uint16_t { return get_value<registers::TEMP_OUT>(); }
+
+    /** accel getter **/
+    auto ICM20948::get_acc_x() -> uint16_t { return get_value<registers::ACCEL_XOUT>(); }
+
+    auto ICM20948::get_acc_y() -> uint16_t { return get_value<registers::ACCEL_YOUT>(); }
+
+    auto ICM20948::get_acc_z() -> uint16_t { return get_value<registers::ACCEL_ZOUT>(); }
+
+    /** gyro getter **/
+    auto ICM20948::get_gyro_x() -> uint16_t { return get_value<registers::GYRO_XOUT>(); }
+
+    auto ICM20948::get_gyro_y() -> uint16_t { return get_value<registers::GYRO_YOUT>(); }
+
+    auto ICM20948::get_gyro_z() -> uint16_t { return get_value<registers::GYRO_ZOUT>(); }
 
 } // namespace icm20948
