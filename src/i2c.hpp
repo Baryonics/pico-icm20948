@@ -1,7 +1,11 @@
 #pragma once
-#include "core/register_base.hpp"
 #include "hardware/i2c.h"
-#include "registers.hpp"
+#include "registers/magnetometer.hpp"
+#include "registers/register_base.hpp"
+#include "registers/userbank0.hpp"
+#include "registers/userbank1.hpp"
+#include "registers/userbank2.hpp"
+#include "registers/userbank3.hpp"
 #include <cstdint>
 #include <cstring>
 

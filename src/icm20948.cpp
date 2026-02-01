@@ -1,5 +1,4 @@
 #include "i2c.hpp"
-#include "registers.hpp"
 #include <cstdint>
 #include <hardware/i2c.h>
 #include <icm20948/icm20948.hpp>

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../src/core/registers.hpp"
-#include "core/i2c.hpp"
+#include "i2c.hpp"
+// #include "registers/userbank1.hpp"
+// #include "registers/userbank2.hpp"
+// #include "registers/userbank3.hpp"
 #include <cstdint>
 #include <hardware/i2c.h>
 
@@ -22,7 +24,7 @@ namespace icm20948
         void set_int();
 
         /** User Bank 0 **/
-        // registers::WHO_AM_I who_am_i{};
+        registers::WHO_AM_I who_am_i{};
         // registers::USER_CTRL usr_ctrl{};
         // registers::LP_CONFIG lp_config{};
         // registers::PWR_MGMT_1 pwr_mgmt_1{};
