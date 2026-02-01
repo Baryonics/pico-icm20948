@@ -19,6 +19,7 @@ namespace icm20948::registers
         UB1 = 1,
         UB2 = 2,
         UB3 = 3,
+        MAG = 4
     };
 
     template <uint8_t From, uint8_t To>
