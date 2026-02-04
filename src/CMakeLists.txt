@@ -9,6 +9,5 @@ target_include_directories(pico_icm_20948
   PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/registers
     ${CMAKE_CURRENT_LIST_DIR}/imu
-    ${CMAKE_CURRENT_LIST_DIR}/data
 )
 

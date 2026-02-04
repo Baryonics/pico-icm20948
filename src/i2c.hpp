@@ -1,19 +1,11 @@
 #pragma once
 #include "hardware/i2c.h"
-#include "registers/reg_magnetometer.hpp"
 #include "registers/register_base.hpp"
 #include "registers/userbank0.hpp"
-#include "registers/userbank1.hpp"
-#include "registers/userbank2.hpp"
-#include "registers/userbank3.hpp"
-#include "sensors/raw_data.hpp"
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <iterator>
 #include <pico/stdio.h>
 #include <span>
-#include <stdio.h>
 
 namespace icm20948
 {
