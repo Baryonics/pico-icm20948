@@ -7,9 +7,12 @@
 #include "registers/userbank2.hpp"
 #include "registers/userbank3.hpp"
 #include "sensors/raw_data.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <pico/stdio.h>
+#include <span>
 #include <stdio.h>
 
 namespace icm20948
@@ -28,13 +31,8 @@ namespace icm20948
             }
             auto bank_sel = registers::REG_BANK_SEL{};
             bank_sel.set_field(bank_sel.USER_BANK, ub);
-
             uint8_t buffer[2] = { bank_sel.address, bank_sel.bits };
             auto err = i2c_write_blocking(i2c_, address, buffer, 2, false);
-            // if (err != 1)
-            // {
-            //     printf("I2C ERR  %d\n", err);
-            // }
             current_ub_ = ub;
         }
 
@@ -49,13 +47,9 @@ namespace icm20948
         {
             uint8_t buffer[1 + sizeof(reg.bits)]{};
             buffer[0] = RegType::address;
-            memcpy(&buffer[1], &reg.bits, sizeof(reg.bits)); // dev note: remember to correct endianess
+            memcpy(&buffer[1], &reg.bits, sizeof(reg.bits));
             select_user_bank(RegType::user_bank);
             auto err = i2c_write_blocking(i2c_, address, buffer, sizeof(buffer), false);
-            // if (err != 1)
-            // {
-            //     printf("I2C ERR  %d\n", err);
-            // }
         }
 
         template <typename RegType>
@@ -68,12 +62,16 @@ namespace icm20948
             auto w = i2c_write_blocking(i2c_, address, &reg_addr, 1, true);
             uint8_t buffer[sizeof(reg.bits)]{};
             auto r = i2c_read_blocking(i2c_, address, buffer, sizeof(reg.bits), false);
-            // if (w != 1 || r != sizeof(reg.bits))
-            //     printf("I2C ERR w=%d r=%d\n", w, r);
             memcpy(&reg.bits, buffer, sizeof(reg.bits));
             return reg;
         }
 
-        void bulk_read_data_registers(data::ComposedRawData& raw_data);
+        template <uint8_t Address, registers::UserBank UB, registers::AccessT Access>
+        void block_read(registers::RegBase<Address, UB, Access>& reg, std::span<uint8_t> dst)
+        {
+            select_user_bank(reg);
+            i2c_write_blocking(i2c_, address, &reg.address, 1, true);
+            i2c_read_blocking(i2c_, address, dst.data(), dst.size(), false);
+        }
     };
 } // namespace icm20948
