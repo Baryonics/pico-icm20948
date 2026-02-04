@@ -2,6 +2,7 @@
 
 #include "i2c.hpp"
 #include "registers/register_base.hpp"
+#include "registers/userbank2.hpp"
 // #include "registers/userbank1.hpp"
 // #include "registers/userbank2.hpp"
 // #include "registers/userbank3.hpp"
@@ -13,6 +14,7 @@ namespace icm20948
 {
     struct ICM20948
     {
+        using accel_full_scale_select = registers::ACCEL_CONFIG::accel_full_scale_select;
         I2C i2c_instance_;
         ICM20948(i2c_inst_t* i2c_instance);
 

@@ -1,11 +1,12 @@
 #pragma once
 #include "hardware/i2c.h"
-#include "registers/magnetometer.hpp"
+#include "registers/reg_magnetometer.hpp"
 #include "registers/register_base.hpp"
 #include "registers/userbank0.hpp"
 #include "registers/userbank1.hpp"
 #include "registers/userbank2.hpp"
 #include "registers/userbank3.hpp"
+#include "sensors/raw_data.hpp"
 #include <cstdint>
 #include <cstring>
 #include <pico/stdio.h>
@@ -19,7 +20,7 @@ namespace icm20948
         registers::UserBank current_ub_ = registers::UserBank::UB0;
         constexpr static uint8_t address = 0b1101000;
 
-        void select_user_bank(registers::UserBank ub)
+        void select_user_bank(const registers::UserBank& ub)
         {
             if (current_ub_ == ub)
             {
@@ -44,7 +45,7 @@ namespace icm20948
 
         template <typename RegType>
             requires(registers::reg_type<RegType>)
-        void write(RegType reg)
+        void write(const RegType& reg)
         {
             uint8_t buffer[1 + sizeof(reg.bits)]{};
             buffer[0] = RegType::address;
@@ -72,5 +73,7 @@ namespace icm20948
             memcpy(&reg.bits, buffer, sizeof(reg.bits));
             return reg;
         }
+
+        void bulk_read_data_registers(data::ComposedRawData& raw_data);
     };
 } // namespace icm20948
