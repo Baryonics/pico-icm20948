@@ -24,47 +24,47 @@ namespace icm20948::registers
 
     struct SELF_TEST_X_GYRO : RegBase<addresses::SELF_TEST_X_GYRO, UserBank::UB1, AccessT::rw>
     {
-        BitField<0, 7> XG_ST_DATA{};
+        static constexpr BitField<0, 7> XG_ST_DATA{};
     };
 
     struct SELF_TEST_Y_GYRO : RegBase<addresses::SELF_TEST_Y_GYRO, UserBank::UB1, AccessT::rw>
     {
-        BitField<0, 7> YG_ST_DATA{};
+        static constexpr BitField<0, 7> YG_ST_DATA{};
     };
 
     struct SELF_TEST_Z_GYRO : RegBase<addresses::SELF_TEST_Z_GYRO, UserBank::UB1, AccessT::rw>
     {
-        BitField<0, 7> ZG_ST_DATA{};
+        static constexpr BitField<0, 7> ZG_ST_DATA{};
     };
 
     struct SELF_TEST_X_ACCEL : RegBase<addresses::SELF_TEST_X_ACCEL, UserBank::UB1, AccessT::rw>
     {
-        BitField<0, 7> XA_ST_DATA{};
+        static constexpr BitField<0, 7> XA_ST_DATA{};
     };
 
     struct SELF_TEST_Y_ACCEL : RegBase<addresses::SELF_TEST_Y_ACCEL, UserBank::UB1, AccessT::rw>
     {
-        BitField<0, 7> YA_ST_DATA{};
+        static constexpr BitField<0, 7> YA_ST_DATA{};
     };
 
     struct SELF_TEST_Z_ACCEL : RegBase<addresses::SELF_TEST_Z_ACCEL, UserBank::UB1, AccessT::rw>
     {
-        BitField<0, 7> ZA_ST_DATA{};
+        static constexpr BitField<0, 7> ZA_ST_DATA{};
     };
 
     struct XA_OFFS : RegBase<addresses::XA_OFFS_H, UserBank::UB1, AccessT::rw, uint16_t>
     {
-        BitField<0, 14> OFFS{};
+        static constexpr BitField<0, 14> OFFS{};
     };
 
     struct YA_OFFS : RegBase<addresses::YA_OFFS_H, UserBank::UB1, AccessT::rw, uint16_t>
     {
-        BitField<0, 14> OFFS{};
+        static constexpr BitField<0, 14> OFFS{};
     };
 
     struct ZA_OFFS : RegBase<addresses::ZA_OFFS_H, UserBank::UB1, AccessT::rw, uint16_t>
     {
-        BitField<0, 14> OFFS{};
+        static constexpr BitField<0, 14> OFFS{};
     };
 
     struct TIMEBASE_CORRECTION_PLL : RegBase<addresses::TIMEBASE_CORRECTION_PLL, UserBank::UB1, AccessT::rw>
@@ -75,6 +75,6 @@ namespace icm20948::registers
             neg_ten_perc = 10
         };
 
-        BitField<0, 7> TBC_PLL{};
+        static constexpr BitField<0, 7> TBC_PLL{};
     };
 } // namespace icm20948::registers

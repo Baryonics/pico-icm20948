@@ -31,7 +31,7 @@ namespace icm20948::registers
 
     struct GYRO_SMPLRT_DIV : RegBase<addresses::GYRO_SMPLRT_DIV, UserBank::UB2, AccessT::rw>
     {
-        BitField<0, 7> SMPTLRT_DIV{};
+        static constexpr BitField<0, 7> SMPTLRT_DIV{};
     };
 
     struct GYRO_CONFIG_1 : RegBase<addresses::GYRO_CONFIG_1, UserBank::UB2, AccessT::rw>
@@ -44,9 +44,9 @@ namespace icm20948::registers
             dps2000 = 3
         };
 
-        BitField<3, 5> GYRO_DLPFCFG{};
-        BitField<1, 2> GYRO_FS_SEL{};
-        Bit<0> GYRO_FCHOICE{};
+        static constexpr BitField<3, 5> GYRO_DLPFCFG{};
+        static constexpr BitField<1, 2> GYRO_FS_SEL{};
+        static constexpr Bit<0> GYRO_FCHOICE{};
     };
 
     struct GYRO_CONFIG_2 : RegBase<addresses::GYRO_CONFIG_2, UserBank::UB2, AccessT::rw>
@@ -63,46 +63,46 @@ namespace icm20948::registers
             av128x = 7
         };
 
-        Bit<5> XGYRO_CTEN{};
-        Bit<4> YGYRO_CTEN{};
-        Bit<3> ZGYRO_CTEN{};
-        BitField<0, 2> GYRO_AVGCFG{};
+        static constexpr Bit<5> XGYRO_CTEN{};
+        static constexpr Bit<4> YGYRO_CTEN{};
+        static constexpr Bit<3> ZGYRO_CTEN{};
+        static constexpr BitField<0, 2> GYRO_AVGCFG{};
     };
 
     struct XG_OFFS_USR : RegBase<addresses::XG_OFFS_USRH, UserBank::UB2, AccessT::rw, uint16_t>
     {
-        BitField<0, 15> X_OFFS_USER{};
+        static constexpr BitField<0, 15> X_OFFS_USER{};
     };
 
     struct YG_OFFS_USR : RegBase<addresses::YG_OFFS_USRH, UserBank::UB2, AccessT::rw, uint16_t>
     {
-        BitField<0, 15> Y_OFFS_USER{};
+        static constexpr BitField<0, 15> Y_OFFS_USER{};
     };
 
     struct ZG_OFFS_USR : RegBase<addresses::ZG_OFFS_USRH, UserBank::UB2, AccessT::rw, uint16_t>
     {
-        BitField<0, 15> Z_OFFS_USER{};
+        static constexpr BitField<0, 15> Z_OFFS_USER{};
     };
 
     struct ODR_ALIGN_EN : RegBase<addresses::ODR_ALIGN_EN, UserBank::UB2, AccessT::rw>
     {
-        Bit<0> ALIGN_EN{};
+        static constexpr Bit<0> ALIGN_EN{};
     };
 
     struct ACCEL_SMPLRT_DIV : RegBase<addresses::ACCEL_SMPLRT_DIV_1, UserBank::UB2, AccessT::rw, uint16_t>
     {
-        BitField<0, 11> SMPLRT_DIV{};
+        static constexpr BitField<0, 11> SMPLRT_DIV{};
     };
 
     struct ACCEL_INTEL_CTRL : RegBase<addresses::ACCEL_INTEL_CRT, UserBank::UB2, AccessT::rw>
     {
-        Bit<1> ACCEL_INTEL_EN{};
-        Bit<0> ACCEL_INTEL_MODE_INT{};
+        static constexpr Bit<1> ACCEL_INTEL_EN{};
+        static constexpr Bit<0> ACCEL_INTEL_MODE_INT{};
     };
 
     struct ACCEL_WOM_THR : RegBase<addresses::ACCEL_WOM_THR, UserBank::UB2, AccessT::rw>
     {
-        BitField<0, 7> WOM_THRESHOLD{};
+        static constexpr BitField<0, 7> WOM_THRESHOLD{};
     };
 
     struct ACCEL_CONFIG : RegBase<addresses::ACCEL_CONFIG, UserBank::UB2, AccessT::rw>
@@ -115,9 +115,9 @@ namespace icm20948::registers
             g16 = 3
         };
 
-        BitField<3, 5> ACCEL_CLPFCFG{};
-        BitField<1, 2> ACCEL_FS_SEL{};
-        Bit<0> ACCEL_FCHOICE{};
+        static constexpr BitField<3, 5> ACCEL_CLPFCFG{};
+        static constexpr BitField<1, 2> ACCEL_FS_SEL{};
+        static constexpr Bit<0> ACCEL_FCHOICE{};
     };
 
     struct ACCEL_CONFIG_2 : RegBase<addresses::ACCEL_CONFIG_2, UserBank::UB2, AccessT::rw>
@@ -130,10 +130,10 @@ namespace icm20948::registers
             av32 = 3
         };
 
-        Bit<4> AX_ST_EN_REG{};
-        Bit<3> AY_ST_EN_REG{};
-        Bit<2> AZ_ST_EN_REG{};
-        BitField<0, 1> DEC3_CFG{};
+        static constexpr Bit<4> AX_ST_EN_REG{};
+        static constexpr Bit<3> AY_ST_EN_REG{};
+        static constexpr Bit<2> AZ_ST_EN_REG{};
+        static constexpr BitField<0, 1> DEC3_CFG{};
     };
 
     struct FSYNC_CONFIG : RegBase<addresses::FSYNC_CONFIG, UserBank::UB2, AccessT::rw>
@@ -150,19 +150,19 @@ namespace icm20948::registers
             accel_zout = 7
         };
 
-        Bit<7> DELAY_TIME_EN{};
-        Bit<5> WOF_DEGLITCH_EN{};
-        Bit<4> WOF_EDGE_INT{};
-        BitField<0, 3> EXT_SYNC_SET{};
+        static constexpr Bit<7> DELAY_TIME_EN{};
+        static constexpr Bit<5> WOF_DEGLITCH_EN{};
+        static constexpr Bit<4> WOF_EDGE_INT{};
+        static constexpr BitField<0, 3> EXT_SYNC_SET{};
     };
 
     struct TEMP_CONFIG : RegBase<addresses::TEMP_CONFIG, UserBank::UB2, AccessT::rw>
     {
-        BitField<0, 2> TEMP_DLPFCFG{};
+        static constexpr BitField<0, 2> TEMP_DLPFCFG{};
     };
 
     struct MOD_CTRL_USR : RegBase<addresses::MOD_CTRL_USR, UserBank::UB2, AccessT::rw>
     {
-        Bit<0> REG_LP_DMP_EN{};
+        static constexpr Bit<0> REG_LP_DMP_EN{};
     };
 } // namespace icm20948::registers
