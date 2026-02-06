@@ -1,4 +1,5 @@
 #include "i2c.hpp"
+#include "registers/userbank2.hpp"
 #include "userbank0.hpp"
 #include <array>
 #include <cstdint>
@@ -19,8 +20,8 @@ namespace
     void raw_to_vec(std::span<uint8_t> input, Vec3<int16_t>& output)
     {
         output.x = array_to_int16(input.subspan(0, 2));
-        output.y = array_to_int16(input.subspan(3, 2));
-        output.z = array_to_int16(input.subspan(5, 2));
+        output.y = array_to_int16(input.subspan(2, 2));
+        output.z = array_to_int16(input.subspan(4, 2));
     }
 } // namespace
 
@@ -30,6 +31,9 @@ namespace icm20948
     {
         i2c_instance = rp_i2c;
         i2c_instance.write(registers::PWR_MGMT_1{}); // init with 0 to wake from sleep
+        i2c_instance.write(registers::ACCEL_CONFIG{}.set_field(registers::ACCEL_CONFIG::ACCEL_FS_SEL,
+                                                               registers::ACCEL_CONFIG::accel_full_scale_select::g16));
+        acc_scale_ = 2048.0;
     }
 
     void ICM20948::update()
@@ -42,8 +46,8 @@ namespace icm20948
         auto raw_mag = Vec3<int16_t>{};
 
         raw_to_vec(data_buf_span.subspan(0, 6), raw_accel);
-        raw_to_vec(data_buf_span.subspan(5, 6), raw_gyro);
-        auto raw_temp = array_to_int16(data_buf_span.subspan(11, 2));
+        raw_to_vec(data_buf_span.subspan(6, 6), raw_gyro);
+        auto raw_temp = array_to_int16(data_buf_span.subspan(12, 2));
         raw_to_vec(data_buf_span.subspan(14, 6), raw_mag);
 
         acc_val_ = raw_accel / acc_scale_;
@@ -59,8 +63,76 @@ namespace icm20948
         return who_am_i.bits;
     }
 
+    void ICM20948::set_accel_range(AccelRange range)
+    {
+        using reg = registers::ACCEL_CONFIG;
+
+        auto fs = reg::accel_full_scale_select{};
+
+        switch (range)
+        {
+            case AccelRange::g2:
+                fs = reg::accel_full_scale_select::g2;
+                acc_scale_ = 16384.0f;
+                break;
+
+            case AccelRange::g4:
+                fs = reg::accel_full_scale_select::g4;
+                acc_scale_ = 8192.0f;
+                break;
+
+            case AccelRange::g8:
+                fs = reg::accel_full_scale_select::g8;
+                acc_scale_ = 4096.0f;
+                break;
+
+            case AccelRange::g16:
+                fs = reg::accel_full_scale_select::g16;
+                acc_scale_ = 2048.0f;
+                break;
+        }
+
+        accel_config_.set_field(reg::ACCEL_FS_SEL, fs);
+        i2c_instance.write(accel_config_);
+    }
+
+    auto ICM20948::get_accel() -> Vec3<float> { return acc_val_; }
+
+    void ICM20948::set_gyro_range(GyroRange range)
+    {
+        using reg = registers::GYRO_CONFIG_1;
+
+        auto fs = reg::full_scale_select{};
+
+        switch (range)
+        {
+            case GyroRange::dps250:
+                fs = reg::full_scale_select::dps250;
+                gyro_scale_ = 131.0f;
+                break;
+
+            case GyroRange::dps500:
+                fs = reg::full_scale_select::dps500;
+                gyro_scale_ = 65.5f;
+                break;
+
+            case GyroRange::dps1000:
+                fs = reg::full_scale_select::dps1000;
+                gyro_scale_ = 32.8f;
+                break;
+
+            case GyroRange::dps2000:
+                fs = reg::full_scale_select::dps2000;
+                gyro_scale_ = 16.4f;
+                break;
+        }
+
+        gyro_config_1_.set_field(reg::GYRO_FS_SEL, fs);
+        i2c_instance.write(gyro_config_1_);
+    }
+    auto ICM20948::get_gyro() -> Vec3<float> { return gyro_val_; }
     auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
     {
-        return ((raw - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
+        return ((static_cast<int>(raw) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
     }
 } // namespace icm20948

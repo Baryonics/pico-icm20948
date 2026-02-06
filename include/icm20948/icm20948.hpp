@@ -2,6 +2,7 @@
 
 #include "i2c.hpp"
 #include "registers/register_base.hpp"
+#include "userbank2.hpp"
 #include <bit>
 #include <concepts>
 #include <cstddef>
@@ -48,6 +49,22 @@ namespace icm20948
         T x, y, z;
     };
 
+    enum class AccelRange : uint8_t
+    {
+        g2,
+        g4,
+        g8,
+        g16
+    };
+
+    enum class GyroRange : uint8_t
+    {
+        dps250,
+        dps500,
+        dps1000,
+        dps2000
+    };
+
     class ICM20948
     {
         static constexpr size_t SENSOR_DATA_LEN = 20;
@@ -60,18 +77,27 @@ namespace icm20948
         Vec3<int> mag_val_{};
         float temp_val_{};
 
-        uint8_t acc_scale_{};
-        uint8_t gyro_scale_{};
+        float acc_scale_{};
+        float gyro_scale_{};
         uint8_t temp_scale_{};
 
         float calc_temp_from_raw(int16_t raw_temp);
 
+        registers::ACCEL_CONFIG accel_config_{};
+        registers::GYRO_CONFIG_1 gyro_config_1_{};
+
       public:
         ICM20948(i2c_inst_t* rp_i2c);
         void update();
+
+        void set_accel_range(AccelRange range);
         Vec3<float> get_accel();
+
+        void set_gyro_range(GyroRange range);
         Vec3<float> get_gyro();
+
         Vec3<float> get_mag();
+
         uint8_t who_am_i();
 
         template <typename ValType>
