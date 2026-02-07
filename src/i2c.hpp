@@ -62,9 +62,8 @@ namespace icm20948
             requires(registers::reg_type<T>)
         void block_read(std::span<uint8_t> dst)
         {
-            auto reg = T{};
-            select_user_bank(reg.user_bank);
-            i2c_write_blocking(i2c_, address, &reg.address, 1, true);
+            select_user_bank(T::user_bank);
+            i2c_write_blocking(i2c_, address, &T::address, 1, true);
             i2c_read_blocking(i2c_, address, dst.data(), dst.size(), false);
         }
     };

@@ -94,7 +94,6 @@ namespace icm20948
         }
 
         accel_config_.set_field(reg::ACCEL_FS_SEL, fs);
-        i2c_instance.write(accel_config_);
     }
 
     auto ICM20948::get_accel() -> Vec3<float> { return acc_val_; }
@@ -129,7 +128,6 @@ namespace icm20948
         }
 
         gyro_config_1_.set_field(reg::GYRO_FS_SEL, fs);
-        i2c_instance.write(gyro_config_1_);
     }
     auto ICM20948::get_gyro() -> Vec3<float> { return gyro_val_; }
     auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
