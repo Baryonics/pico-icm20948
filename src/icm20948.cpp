@@ -1,9 +1,11 @@
 #include "i2c.hpp"
+#include "pico/stdlib.h"
 #include "registers/userbank2.hpp"
 #include "userbank0.hpp"
 #include <array>
 #include <cstdint>
 #include <hardware/i2c.h>
+#include <hardware/timer.h>
 #include <icm20948/icm20948.hpp>
 #include <span>
 
@@ -31,9 +33,8 @@ namespace icm20948
     {
         i2c_instance = rp_i2c;
         i2c_instance.write(registers::PWR_MGMT_1{}); // init with 0 to wake from sleep
-        i2c_instance.write(registers::ACCEL_CONFIG{}.set_field(registers::ACCEL_CONFIG::ACCEL_FS_SEL,
-                                                               registers::ACCEL_CONFIG::accel_full_scale_select::g16));
-        acc_scale_ = 2048.0;
+        set_accel_range(AccelRange::g16);
+        set_gyro_range(GyroRange::dps2000);
     }
 
     void ICM20948::update()
@@ -88,7 +89,7 @@ namespace icm20948
 
             case AccelRange::g16:
                 fs = reg::accel_full_scale_select::g16;
-                acc_scale_ = 2048.0f;
+                acc_scale_ = 2048.0;
                 break;
         }
 

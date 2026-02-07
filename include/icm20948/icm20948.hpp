@@ -2,7 +2,7 @@
 
 #include "i2c.hpp"
 #include "registers/register_base.hpp"
-#include "userbank2.hpp"
+#include "registers/userbank2.hpp"
 #include <bit>
 #include <concepts>
 #include <cstddef>
