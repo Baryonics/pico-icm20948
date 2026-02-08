@@ -86,6 +86,14 @@ namespace icm20948
 
         float calc_temp_from_raw(int16_t raw_temp);
 
+        template <typename ValType>
+            requires registers::reg_type<ValType>
+        int16_t get_value()
+        {
+            auto val_reg = i2c_instance.read<ValType>();
+            return static_cast<int16_t>(std::byteswap(val_reg.bits));
+        }
+
         /** Config Registers **/
         registers::USER_CTRL user_ctrl_{};
         registers::LP_CONFIG lp_config_{};
@@ -145,24 +153,18 @@ namespace icm20948
       public:
         ICM20948(i2c_inst_t* rp_i2c);
         void update();
+
+        /** config methods **/
         void apply();
 
         void set_accel_range(AccelRange range);
-        Vec3<float> get_accel();
-
         void set_gyro_range(GyroRange range);
-        Vec3<float> get_gyro();
 
+        /** sensor getters **/
+        Vec3<float> get_accel();
+        Vec3<float> get_gyro();
         Vec3<float> get_mag();
 
         uint8_t who_am_i();
-
-        template <typename ValType>
-            requires registers::reg_type<ValType>
-        int16_t get_value()
-        {
-            auto val_reg = i2c_instance.read<ValType>();
-            return static_cast<int16_t>(std::byteswap(val_reg.bits));
-        }
     };
 } // namespace icm20948
