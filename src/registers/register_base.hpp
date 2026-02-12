@@ -56,7 +56,8 @@ namespace icm20948::registers
         }
 
         template <uint8_t from, uint8_t to, typename T>
-            requires(std::is_enum_v<T> and from < to and to < 8 and (access == AccessT::rw or access == AccessT::w))
+            requires((std::is_enum_v<T> or std::integral<T>) and from < to and to < 8 and
+                     (access == AccessT::rw or access == AccessT::w))
         RegBase& set_field(BitField<from, to>, T value)
         {
             constexpr auto width = uint8_t{ (to - from + 1U) };
