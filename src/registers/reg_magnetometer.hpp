@@ -22,33 +22,33 @@ namespace icm20948::registers::mag
 {
     struct WIA : RegBase<addresses::WIA2, UserBank::MAG, AccessT::r>
     {
-        BitField<0, 7> DEVICE_ID{};
+        static constexpr BitField<0, 7> DEVICE_ID{};
     };
 
     struct ST1 : RegBase<addresses::ST1, UserBank::MAG, AccessT::r>
     {
-        Bit<1> DOR{};
-        Bit<0> DRDY{};
+        static constexpr Bit<1> DOR{};
+        static constexpr Bit<0> DRDY{};
     };
 
     struct HX : RegBase<addresses::HXH, UserBank::MAG, AccessT::r, uint16_t>
     {
-        BitField<0, 15> VAL{};
+        static constexpr BitField<0, 15> VAL{};
     };
 
     struct HY : RegBase<addresses::HYH, UserBank::MAG, AccessT::r, uint16_t>
     {
-        BitField<0, 15> VAL{};
+        static constexpr BitField<0, 15> VAL{};
     };
 
     struct HZ : RegBase<addresses::HZH, UserBank::MAG, AccessT::r, uint16_t>
     {
-        BitField<0, 15> VAL{};
+        static constexpr BitField<0, 15> VAL{};
     };
 
     struct ST2 : RegBase<addresses::ST2, UserBank::MAG, AccessT::r>
     {
-        Bit<3> HOFL{};
+        static constexpr Bit<3> HOFL{};
     };
 
     struct CNTRL2 : RegBase<addresses::CNTL2, UserBank::MAG, AccessT::rw>
@@ -64,11 +64,11 @@ namespace icm20948::registers::mag
             self_test = 0b10000
         };
 
-        BitField<0, 4> MODE{};
+        static constexpr BitField<0, 4> MODE{};
     };
 
     struct CNTRL3 : RegBase<addresses::CNTL3, UserBank::MAG, AccessT::rw>
     {
-        Bit<0> SRST{};
+        static constexpr Bit<0> SRST{};
     };
 } // namespace icm20948::registers::mag
