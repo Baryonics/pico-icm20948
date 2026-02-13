@@ -62,7 +62,7 @@ namespace icm20948::registers
         {
             constexpr auto width = uint8_t{ (to - from + 1U) };
             auto mask = RegSizeT{ ((1U << width) - 1U) << from };
-            bits = (bits & ~mask) | (((std::to_underlying(value) << from)) & mask);
+            bits = (bits & ~mask) | (((static_cast<unsigned int>(value) << from)) & mask);
             return *this;
         }
 
