@@ -38,7 +38,7 @@ namespace icm20948::registers
 
     /** Base Class for Registers **/
     template <uint8_t Address, UserBank UB, AccessT Access, typename RegSizeT = uint8_t>
-        requires(std::same_as<RegSizeT, uint8_t> || std::same_as<RegSizeT, uint16_t>)
+        requires(std::same_as<RegSizeT, uint8_t> or std::same_as<RegSizeT, uint16_t>)
     struct RegBase
     {
         constexpr static uint8_t address = Address;
@@ -47,35 +47,36 @@ namespace icm20948::registers
         RegSizeT bits{ 0 };
 
         template <uint8_t pos>
-            requires(pos < 8 and (access == AccessT::rw or access == AccessT::w))
-        RegBase& set_bit(Bit<pos> bit, bool state = true)
+            requires(pos < sizeof(RegSizeT) * 8U and (access == AccessT::rw or access == AccessT::w))
+        RegBase& set_bit(const Bit<pos> bit, bool state = true)
         {
-            auto mask = (RegSizeT(1) << pos);
-            bits = (bits & ~mask) | (state ? mask : 0);
+            auto mask = (RegSizeT(1U) << pos);
+            bits = (bits & ~mask) | (state ? mask : 0U);
             return *this;
         }
 
         template <uint8_t from, uint8_t to, typename T>
-            requires((std::is_enum_v<T> or std::integral<T>) and from < to and to < 8 and
+            requires((std::is_enum_v<T> or std::integral<T>) and from < to and to < sizeof(RegSizeT) * 8U and
                      (access == AccessT::rw or access == AccessT::w))
-        RegBase& set_field(BitField<from, to>, T value)
+        RegBase& set_field(const BitField<from, to>, T value)
         {
             constexpr auto width = uint8_t{ (to - from + 1U) };
             auto mask = RegSizeT{ ((1U << width) - 1U) << from };
-            bits = (bits & ~mask) | (((static_cast<unsigned int>(value) << from)) & mask);
+            bits = (bits & ~mask) | (((static_cast<uint8_t>(value) << from)) & mask);
             return *this;
         }
 
         template <uint8_t pos>
-            requires(pos < 8 and (access == AccessT::rw or access == AccessT::r))
-        bool get_bit(Bit<pos> bit)
+            requires(pos < sizeof(RegSizeT) * 8U and (access == AccessT::rw or access == AccessT::r))
+        [[nodiscard]] bool get_bit(const Bit<pos> bit) const
         {
             return (bits & (RegSizeT(1) << pos)) != 0;
         }
 
         template <uint8_t from, uint8_t to, typename T>
-            requires(std::is_enum_v<T> and from < to and to < 8 and (access == AccessT::rw or access == AccessT::r))
-        T get_field(BitField<from, to>)
+            requires(std::is_enum_v<T> and from < to and to < sizeof(RegSizeT) * 8U and
+                     (access == AccessT::rw or access == AccessT::r))
+        [[nodiscard]] T get_field(const BitField<from, to>) const
         {
             constexpr auto width = uint8_t{ (to - from + 1U) };
             auto mask = RegSizeT{ ((1U << width) - 1U) << from };
