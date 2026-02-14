@@ -23,8 +23,8 @@ namespace icm20948
             }
             auto bank_sel = registers::REG_BANK_SEL{};
             bank_sel.set_field(bank_sel.USER_BANK, ub);
-            uint8_t buffer[2] = { bank_sel.address, bank_sel.bits };
-            auto err = i2c_write_blocking(i2c_, address, buffer, 2, false);
+            uint8_t buffer[2U] = { bank_sel.address, bank_sel.bits };
+            auto err = i2c_write_blocking(i2c_, address, buffer, 2U, false);
             current_ub_ = ub;
         }
 
@@ -35,13 +35,19 @@ namespace icm20948
 
         template <typename RegType>
             requires(registers::reg_type<RegType>)
-        void write(const RegType& reg)
+        void single_write(const RegType& reg)
         {
             uint8_t buffer[1 + sizeof(reg.bits)]{};
             buffer[0] = RegType::address;
             memcpy(&buffer[1], &reg.bits, sizeof(reg.bits));
             select_user_bank(RegType::user_bank);
             auto err = i2c_write_blocking(i2c_, address, buffer, sizeof(buffer), false);
+        }
+
+        template <typename... RegTypes>
+        void write(const RegTypes&... regs)
+        {
+            (single_write(regs), ...);
         }
 
         template <typename RegType>

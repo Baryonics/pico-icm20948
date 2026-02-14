@@ -1,8 +1,11 @@
 #include "i2c.hpp"
 #include "pico/stdlib.h"
+#include "reg_magnetometer.hpp"
 #include "registers/userbank2.hpp"
 #include "userbank0.hpp"
+#include "userbank3.hpp"
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <hardware/i2c.h>
 #include <hardware/timer.h>
@@ -12,10 +15,14 @@
 namespace
 {
     using namespace icm20948;
-    auto array_to_int16(std::span<uint8_t> input) -> int16_t
+    auto array_to_int16(std::span<uint8_t> input, bool no_swap = false) -> int16_t
     {
         auto int16_buf = int16_t{};
         memcpy(&int16_buf, input.data(), 2);
+        if (no_swap)
+        {
+            return int16_buf;
+        }
         return std::byteswap(int16_buf);
     }
 
@@ -32,9 +39,14 @@ namespace icm20948
     ICM20948::ICM20948(i2c_inst_t* rp_i2c)
     {
         i2c_instance = rp_i2c;
-        i2c_instance.write(registers::PWR_MGMT_1{}); // init with 0 to wake from sleep
-        set_accel_range(AccelRange::g16);
-        set_gyro_range(GyroRange::dps2000);
+        i2c_instance.write(registers::PWR_MGMT_1{});
+        set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).enable_mag().apply();
+        mag_cntrl3_.set_bit(registers::mag::CNTRL3::SRST, false);
+        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, mag_cntrl3_.address);
+        i2c_slv4_do_.set_field(registers::I2C_SLV4_DO::DO, mag_cntrl3_.bits);
+        i2c_instance.write(i2c_slv4_reg_, i2c_slv4_do_);
+
+        // set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).apply();
     }
 
     void ICM20948::update()
@@ -64,7 +76,7 @@ namespace icm20948
         return who_am_i.bits;
     }
 
-    void ICM20948::set_accel_range(AccelRange range)
+    auto ICM20948::set_accel_range(AccelRange range) -> ICM20948&
     {
         using reg = registers::ACCEL_CONFIG;
 
@@ -94,11 +106,12 @@ namespace icm20948
         }
 
         accel_config_.set_field(reg::ACCEL_FS_SEL, fs);
+        return *this;
     }
 
     auto ICM20948::get_accel() -> Vec3<float> { return acc_val_; }
 
-    void ICM20948::set_gyro_range(GyroRange range)
+    auto ICM20948::set_gyro_range(GyroRange range) -> ICM20948&
     {
         using reg = registers::GYRO_CONFIG_1;
 
@@ -128,8 +141,60 @@ namespace icm20948
         }
 
         gyro_config_1_.set_field(reg::GYRO_FS_SEL, fs);
+        return *this;
     }
+
+    void ICM20948::apply()
+    {
+        i2c_instance.write(user_ctrl_,
+                           pwr_mgmt_1_,
+                           accel_config_,
+                           gyro_config_1_,
+                           i2c_mst_ctrl_,
+
+                           i2c_slv0_addr,
+                           i2c_slv0_reg_,
+                           i2c_slv0_ctrl_,
+
+                           i2c_slv4_addr_,
+                           i2c_slv4_reg_,
+                           i2c_slv4_do_,
+                           i2c_slv4_ctrl_);
+    }
+
+    auto ICM20948::sleep(bool is_sleep) -> ICM20948&
+    {
+        pwr_mgmt_1_.set_bit(registers::PWR_MGMT_1::SLEEP, is_sleep);
+        return *this;
+    }
+
     auto ICM20948::get_gyro() -> Vec3<float> { return gyro_val_; }
+
+    auto ICM20948::get_mag() -> Vec3<int> { return mag_val_; };
+
+    auto ICM20948::enable_mag() -> ICM20948&
+    {
+        user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);
+
+        mag_cntrl2_.set_field(registers::mag::CNTRL2::MODE,
+                              registers::mag::CNTRL2::mode_select::continuous_mesaurement4);
+
+        i2c_mst_ctrl_.set_field(registers::I2C_MST_CTRL::I2C_MST_CLK, 7);
+
+        i2c_slv0_ctrl_.set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)
+            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8);
+        i2c_slv0_addr.set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)
+            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);
+        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address);
+
+        i2c_slv4_ctrl_.set_bit(registers::I2C_SLV4_CTRL::I2C_SLV4_EN, true);
+        i2c_slv4_addr_.set_field(registers::I2C_SLV4_ADDR::I2C_ID_4, 0xC);
+        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, registers::mag::CNTRL2::address);
+        i2c_slv4_do_.set_field(registers::I2C_SLV4_DI::DI, mag_cntrl2_.bits);
+        return *this;
+    }
+
+    /** Helpers **/
     auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
     {
         return ((static_cast<int>(raw) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;

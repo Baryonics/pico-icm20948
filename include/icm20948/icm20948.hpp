@@ -1,11 +1,12 @@
 #pragma once
 
 #include "i2c.hpp"
+#include "registers/reg_magnetometer.hpp"
 #include "registers/register_base.hpp"
+#include "registers/userbank0.hpp"
+#include "registers/userbank1.hpp"
 #include "registers/userbank2.hpp"
-#include "userbank0.hpp"
-#include "userbank1.hpp"
-#include "userbank3.hpp"
+#include "registers/userbank3.hpp"
 #include <bit>
 #include <concepts>
 #include <cstddef>
@@ -70,7 +71,7 @@ namespace icm20948
 
     class ICM20948
     {
-        static constexpr size_t SENSOR_DATA_LEN = 20;
+        static constexpr size_t SENSOR_DATA_LEN = 22;
         static constexpr float TEMP_SENS = 333.87;
         static constexpr int ROOM_TEMP_OFFS = 21;
 
@@ -84,7 +85,9 @@ namespace icm20948
         float gyro_scale_{};
         uint8_t temp_scale_{};
 
+        /** helpers **/
         float calc_temp_from_raw(int16_t raw_temp);
+        ICM20948& enable_mag();
 
         template <typename ValType>
             requires registers::reg_type<ValType>
@@ -148,7 +151,17 @@ namespace icm20948
 
         registers::I2C_SLV0_ADDR i2c_slv0_addr{};
         registers::I2C_SLV0_REG i2c_slv0_reg_{};
+        registers::I2C_MST_CTRL i2c_slv0_ctrl_{};
         registers::I2C_SLV0_DO i2c_slv0_do_{};
+
+        registers::I2C_SLV4_ADDR i2c_slv4_addr_{};
+        registers::I2C_SLV4_REG i2c_slv4_reg_{};
+        registers::I2C_MST_CTRL i2c_slv4_ctrl_{};
+        registers::I2C_SLV4_DO i2c_slv4_do_{};
+
+        /** Magnetometer Config **/
+        registers::mag::CNTRL2 mag_cntrl2_{};
+        registers::mag::CNTRL3 mag_cntrl3_{};
 
       public:
         ICM20948(i2c_inst_t* rp_i2c);
@@ -156,14 +169,15 @@ namespace icm20948
 
         /** config methods **/
         void apply();
+        ICM20948& sleep(bool is_sleep);
 
-        void set_accel_range(AccelRange range);
-        void set_gyro_range(GyroRange range);
+        ICM20948& set_accel_range(AccelRange range);
+        ICM20948& set_gyro_range(GyroRange range);
 
         /** sensor getters **/
-        Vec3<float> get_accel();
         Vec3<float> get_gyro();
-        Vec3<float> get_mag();
+        Vec3<float> get_accel();
+        Vec3<int> get_mag();
 
         uint8_t who_am_i();
     };
