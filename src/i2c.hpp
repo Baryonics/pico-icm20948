@@ -59,9 +59,17 @@ namespace icm20948
         }
 
         template <typename... RegTypes>
-        void write(const RegTypes&... regs)
+            requires(registers::reg_type<RegTypes> && ...)
+        std::expected<void, ICMErrorT> write(const RegTypes&... regs)
         {
-            (single_write(regs), ...);
+            auto try_one = [&](auto const& r) -> std::expected<void, ICMErrorT>
+            {
+                if (auto e = single_write(r); !e)
+                    return e;
+                return {};
+            };
+
+            return (try_one(regs) && ...);
         }
 
         template <typename RegType>
