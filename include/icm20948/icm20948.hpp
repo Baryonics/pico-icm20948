@@ -59,7 +59,7 @@ namespace icm20948
         float gyro_scale_{};
         uint8_t temp_scale_{};
 
-        ErrorT<void> enable_slave(const uint8_t address, const SlaveMode rw);
+        ErrorT<void> enable_slave(const uint8_t address, const SlaveMode rw, const SlaveNum slv);
 
         /** helpers **/
         float calc_temp_from_raw(int16_t raw_temp);

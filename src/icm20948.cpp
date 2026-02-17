@@ -214,7 +214,17 @@ namespace icm20948
     }
 
     /** private **/
-    auto ICM20948::enable_slave(const uint8_t address, const SlaveMode rw) -> ErrorT<void> {}
+    auto ICM20948::enable_slave(const uint8_t address, const SlaveMode rw, const SlaveNum slv) -> ErrorT<void>
+    {
+        if (!user_ctrl_.get_bit(registers::USER_CTRL::I2C_MST_EN))
+        {
+            user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);
+            if (auto r = i2c_instance.write(user_ctrl_); !r)
+            {
+                return std::unexpected(r.error());
+            }
+        }
+    }
 
     /** helpers **/
     auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
