@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
 #include "registers/reg_magnetometer.hpp"
@@ -13,30 +14,37 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <hardware/i2c.h>
+#include <pico/types.h>
 
 /** BIG TODOS: Magic Numbers, expected **/
 namespace icm20948
 {
 
-    enum class AccelRange : uint8_t
-    {
-        g2,
-        g4,
-        g8,
-        g16
-    };
-
-    enum class GyroRange : uint8_t
-    {
-        dps250,
-        dps500,
-        dps1000,
-        dps2000
-    };
-
     class ICM20948
     {
+      public:
+        ICM20948(i2c_inst_t* rp_i2c);
+        ErrorT<void> update();
+
+        /** config methods **/
+        ErrorT<void> init();
+        void apply();
+        ErrorT<void> sleep(bool is_sleep);
+        ErrorT<void> enable_mag();
+
+        ErrorT<void> set_accel_range(AccelRange range);
+        ErrorT<void> set_gyro_range(GyroRange range);
+
+        /** sensor getters **/
+        Vec3<float> get_gyro();
+        Vec3<float> get_accel();
+        Vec3<int> get_mag();
+
+        ErrorT<uint8_t> who_am_i();
+
+      private:
         static constexpr size_t SENSOR_DATA_LEN = 22;
         static constexpr float TEMP_SENS = 333.87;
         static constexpr int ROOM_TEMP_OFFS = 21;
@@ -51,9 +59,10 @@ namespace icm20948
         float gyro_scale_{};
         uint8_t temp_scale_{};
 
+        ErrorT<void> enable_slave(const uint8_t address, const SlaveMode rw);
+
         /** helpers **/
         float calc_temp_from_raw(int16_t raw_temp);
-        ICM20948& enable_mag();
 
         template <typename ValType>
             requires registers::reg_type<ValType>
@@ -128,23 +137,5 @@ namespace icm20948
         /** Magnetometer Config **/
         registers::mag::CNTRL2 mag_cntrl2_{};
         registers::mag::CNTRL3 mag_cntrl3_{};
-
-      public:
-        ICM20948(i2c_inst_t* rp_i2c);
-        void update();
-
-        /** config methods **/
-        void apply();
-        ICM20948& sleep(bool is_sleep);
-
-        ICM20948& set_accel_range(AccelRange range);
-        ICM20948& set_gyro_range(GyroRange range);
-
-        /** sensor getters **/
-        Vec3<float> get_gyro();
-        Vec3<float> get_accel();
-        Vec3<int> get_mag();
-
-        uint8_t who_am_i();
     };
 } // namespace icm20948

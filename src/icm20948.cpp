@@ -1,3 +1,5 @@
+#include "config_enums.hpp"
+#include "errors.hpp"
 #include "i2c.hpp"
 #include "pico/stdlib.h"
 #include "reg_magnetometer.hpp"
@@ -7,9 +9,12 @@
 #include <array>
 #include <concepts>
 #include <cstdint>
+#include <expected>
 #include <hardware/i2c.h>
 #include <hardware/timer.h>
 #include <icm20948/icm20948.hpp>
+#include <pico/error.h>
+#include <pico/types.h>
 #include <span>
 
 namespace
@@ -37,23 +42,19 @@ namespace
 namespace icm20948
 {
     ICM20948::ICM20948(i2c_inst_t* rp_i2c)
+        : i2c_instance(rp_i2c)
     {
-        i2c_instance = rp_i2c;
-        i2c_instance.write(registers::PWR_MGMT_1{});
-        set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).enable_mag().apply();
-        mag_cntrl3_.set_bit(registers::mag::CNTRL3::SRST, false);
-        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, mag_cntrl3_.address);
-        i2c_slv4_do_.set_field(registers::I2C_SLV4_DO::DO, mag_cntrl3_.bits);
-        i2c_instance.write(i2c_slv4_reg_, i2c_slv4_do_);
-
-        // set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).apply();
     }
 
-    void ICM20948::update()
+    /** public **/
+    ErrorT<void> ICM20948::update()
     {
         auto raw_data_buffer = std::array<uint8_t, SENSOR_DATA_LEN>{};
         auto data_buf_span = std::span(raw_data_buffer);
-        i2c_instance.block_read<registers::ACCEL_XOUT>(std::span(raw_data_buffer));
+        if (auto r = i2c_instance.block_read<registers::ACCEL_XOUT>(std::span(raw_data_buffer)); !r)
+        {
+            return std::unexpected(r.error());
+        }
         auto raw_accel = Vec3<int16_t>{};
         auto raw_gyro = Vec3<int16_t>{};
         auto raw_mag = Vec3<int16_t>{};
@@ -67,16 +68,69 @@ namespace icm20948
         gyro_val_ = raw_gyro / gyro_scale_;
         temp_val_ = calc_temp_from_raw(raw_temp);
         mag_val_ = raw_mag;
+
+        return {};
     };
 
-    auto ICM20948::who_am_i() -> uint8_t
+    auto ICM20948::init() -> ErrorT<void>
     {
-        auto who_am_i = registers::WHO_AM_I{};
-        who_am_i = i2c_instance.read<registers::WHO_AM_I>();
-        return who_am_i.bits;
+
+        i2c_instance.write(registers::PWR_MGMT_1{});
+        set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).enable_mag().apply();
+        mag_cntrl3_.set_bit(registers::mag::CNTRL3::SRST, false);
+        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, mag_cntrl3_.address);
+        i2c_slv4_do_.set_field(registers::I2C_SLV4_DO::DO, mag_cntrl3_.bits);
+        i2c_instance.write(i2c_slv4_reg_, i2c_slv4_do_);
+        // set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).apply();
     }
 
-    auto ICM20948::set_accel_range(AccelRange range) -> ICM20948&
+    void ICM20948::apply()
+    {
+        auto WAT = i2c_instance.write(user_ctrl_,
+                                      pwr_mgmt_1_,
+                                      accel_config_,
+                                      gyro_config_1_,
+                                      i2c_mst_ctrl_,
+
+                                      i2c_slv0_addr,
+                                      i2c_slv0_reg_,
+                                      i2c_slv0_ctrl_,
+
+                                      i2c_slv4_addr_,
+                                      i2c_slv4_reg_,
+                                      i2c_slv4_do_,
+                                      i2c_slv4_ctrl_);
+    }
+
+    auto ICM20948::sleep(bool is_sleep) -> ErrorT<void>
+    {
+        pwr_mgmt_1_.set_bit(registers::PWR_MGMT_1::SLEEP, is_sleep);
+        return {};
+    }
+
+    auto ICM20948::enable_mag() -> ErrorT<void>
+    {
+        user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);
+
+        mag_cntrl2_.set_field(registers::mag::CNTRL2::MODE,
+                              registers::mag::CNTRL2::mode_select::continuous_mesaurement4);
+
+        i2c_mst_ctrl_.set_field(registers::I2C_MST_CTRL::I2C_MST_CLK, 7);
+
+        i2c_slv0_ctrl_.set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)
+            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8);
+        i2c_slv0_addr.set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)
+            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);
+        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address);
+
+        i2c_slv4_ctrl_.set_bit(registers::I2C_SLV4_CTRL::I2C_SLV4_EN, true);
+        i2c_slv4_addr_.set_field(registers::I2C_SLV4_ADDR::I2C_ID_4, 0xC);
+        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, registers::mag::CNTRL2::address);
+        i2c_slv4_do_.set_field(registers::I2C_SLV4_DI::DI, mag_cntrl2_.bits);
+        return {};
+    }
+
+    auto ICM20948::set_accel_range(AccelRange range) -> ErrorT<void>
     {
         using reg = registers::ACCEL_CONFIG;
 
@@ -106,12 +160,10 @@ namespace icm20948
         }
 
         accel_config_.set_field(reg::ACCEL_FS_SEL, fs);
-        return *this;
+        return {};
     }
 
-    auto ICM20948::get_accel() -> Vec3<float> { return acc_val_; }
-
-    auto ICM20948::set_gyro_range(GyroRange range) -> ICM20948&
+    auto ICM20948::set_gyro_range(GyroRange range) -> ErrorT<void>
     {
         using reg = registers::GYRO_CONFIG_1;
 
@@ -141,62 +193,33 @@ namespace icm20948
         }
 
         gyro_config_1_.set_field(reg::GYRO_FS_SEL, fs);
-        return *this;
+        return {};
     }
 
-    void ICM20948::apply()
-    {
-        i2c_instance.write(user_ctrl_,
-                           pwr_mgmt_1_,
-                           accel_config_,
-                           gyro_config_1_,
-                           i2c_mst_ctrl_,
-
-                           i2c_slv0_addr,
-                           i2c_slv0_reg_,
-                           i2c_slv0_ctrl_,
-
-                           i2c_slv4_addr_,
-                           i2c_slv4_reg_,
-                           i2c_slv4_do_,
-                           i2c_slv4_ctrl_);
-    }
-
-    auto ICM20948::sleep(bool is_sleep) -> ICM20948&
-    {
-        pwr_mgmt_1_.set_bit(registers::PWR_MGMT_1::SLEEP, is_sleep);
-        return *this;
-    }
+    /** Sensor Getters **/
+    auto ICM20948::get_accel() -> Vec3<float> { return acc_val_; }
 
     auto ICM20948::get_gyro() -> Vec3<float> { return gyro_val_; }
 
     auto ICM20948::get_mag() -> Vec3<int> { return mag_val_; };
 
-    auto ICM20948::enable_mag() -> ICM20948&
+    auto ICM20948::who_am_i() -> ErrorT<uint8_t>
     {
-        user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);
-
-        mag_cntrl2_.set_field(registers::mag::CNTRL2::MODE,
-                              registers::mag::CNTRL2::mode_select::continuous_mesaurement4);
-
-        i2c_mst_ctrl_.set_field(registers::I2C_MST_CTRL::I2C_MST_CLK, 7);
-
-        i2c_slv0_ctrl_.set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)
-            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8);
-        i2c_slv0_addr.set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)
-            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);
-        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address);
-
-        i2c_slv4_ctrl_.set_bit(registers::I2C_SLV4_CTRL::I2C_SLV4_EN, true);
-        i2c_slv4_addr_.set_field(registers::I2C_SLV4_ADDR::I2C_ID_4, 0xC);
-        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, registers::mag::CNTRL2::address);
-        i2c_slv4_do_.set_field(registers::I2C_SLV4_DI::DI, mag_cntrl2_.bits);
-        return *this;
+        auto r = i2c_instance.read<registers::WHO_AM_I>();
+        if (!r)
+        {
+            return std::unexpected(r.error());
+        }
+        return r.value().bits;
     }
 
-    /** Helpers **/
+    /** private **/
+    auto ICM20948::enable_slave(const uint8_t address, const SlaveMode rw) -> ErrorT<void> {}
+
+    /** helpers **/
     auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
     {
         return ((static_cast<int>(raw) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
     }
+
 } // namespace icm20948

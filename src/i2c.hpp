@@ -18,7 +18,7 @@ namespace icm20948
         registers::UserBank current_ub_ = registers::UserBank::UB0;
         constexpr static uint8_t address = 0b1101000;
 
-        std::expected<void, ICMErrorT> select_user_bank(const registers::UserBank& ub)
+        ErrorT<void> select_user_bank(const registers::UserBank& ub)
         {
             if (current_ub_ == ub)
             {
@@ -43,14 +43,14 @@ namespace icm20948
 
         template <typename RegType>
             requires(registers::reg_type<RegType>)
-        std::expected<void, ICMErrorT> single_write(const RegType& reg)
+        ErrorT<void> single_write(const RegType& reg)
         {
             uint8_t buffer[1 + sizeof(reg.bits)]{};
             buffer[0] = RegType::address;
             memcpy(&buffer[1], &reg.bits, sizeof(reg.bits));
             if (auto r = select_user_bank(RegType::user_bank); !r)
             {
-                return r.error();
+                return std::unexpected(r.error());
             }
             if (auto r = i2c_write_blocking(i2c_, address, buffer, sizeof(buffer), false); r < 0)
             {
@@ -60,27 +60,30 @@ namespace icm20948
 
         template <typename... RegTypes>
             requires(registers::reg_type<RegTypes> && ...)
-        std::expected<void, ICMErrorT> write(const RegTypes&... regs)
+        ErrorT<void> write(const RegTypes&... regs)
         {
-            auto try_one = [&](auto const& r) -> std::expected<void, ICMErrorT>
+            ErrorT<void> res{};
+
+            auto try_one = [&](auto const& r) -> bool
             {
-                if (auto e = single_write(r); !e)
-                    return e;
-                return {};
+                res = single_write(r);
+                return res.has_value();
             };
 
-            return (try_one(regs) && ...);
+            (try_one(regs) && ...);
+
+            return res;
         }
 
         template <typename RegType>
             requires(registers::reg_type<RegType>)
-        std::expected<RegType, ICMErrorT> read()
+        ErrorT<RegType> read()
         {
             uint8_t reg_addr = RegType::address;
             RegType reg{};
             if (auto r = select_user_bank(RegType::user_bank); !r)
             {
-                return r.error();
+                return std::unexpected(r.error());
             }
             if (auto r = i2c_write_blocking(i2c_, address, &reg_addr, 1, true); r < 0)
             {
@@ -97,11 +100,11 @@ namespace icm20948
 
         template <typename T>
             requires(registers::reg_type<T>)
-        std::expected<void, ICMErrorT> block_read(std::span<uint8_t> dst)
+        ErrorT<void> block_read(std::span<uint8_t> dst)
         {
             if (auto r = select_user_bank(T::user_bank); !r)
             {
-                return r.error();
+                return std::unexpected(r.error());
             }
             if (auto r = i2c_write_blocking(i2c_, address, &T::address, 1, true); r < 0)
             {
