@@ -27,7 +27,6 @@ namespace icm20948
             auto bank_sel = registers::REG_BANK_SEL{};
             bank_sel.set_field(bank_sel.USER_BANK, ub);
             uint8_t buffer[2U] = { bank_sel.address, bank_sel.bits };
-            auto err = i2c_write_blocking(i2c_, address, buffer, 2U, false);
             if (auto r = i2c_write_blocking(i2c_, address, buffer, 2U, false); r < 0U)
             {
                 return std::unexpected(ICMErrorT::i2c_write_failed);
@@ -56,6 +55,7 @@ namespace icm20948
             {
                 return std::unexpected(ICMErrorT::i2c_write_failed);
             }
+            return {};
         }
 
         template <typename... RegTypes>

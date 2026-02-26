@@ -2,6 +2,7 @@
 #include "errors.hpp"
 #include "i2c.hpp"
 #include "pico/stdlib.h"
+#include "pico/time.h"
 #include "reg_magnetometer.hpp"
 #include "registers/userbank2.hpp"
 #include "userbank0.hpp"
@@ -15,6 +16,7 @@
 #include <icm20948/icm20948.hpp>
 #include <pico/error.h>
 #include <pico/types.h>
+#include <ranges>
 #include <span>
 
 namespace
@@ -74,59 +76,10 @@ namespace icm20948
 
     auto ICM20948::init() -> ErrorT<void>
     {
-
-        i2c_instance.write(registers::PWR_MGMT_1{});
-        set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).enable_mag().apply();
-        mag_cntrl3_.set_bit(registers::mag::CNTRL3::SRST, false);
-        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, mag_cntrl3_.address);
-        i2c_slv4_do_.set_field(registers::I2C_SLV4_DO::DO, mag_cntrl3_.bits);
-        i2c_instance.write(i2c_slv4_reg_, i2c_slv4_do_);
-        // set_accel_range(AccelRange::g16).set_gyro_range(GyroRange::dps2000).apply();
-    }
-
-    void ICM20948::apply()
-    {
-        auto WAT = i2c_instance.write(user_ctrl_,
-                                      pwr_mgmt_1_,
-                                      accel_config_,
-                                      gyro_config_1_,
-                                      i2c_mst_ctrl_,
-
-                                      i2c_slv0_addr,
-                                      i2c_slv0_reg_,
-                                      i2c_slv0_ctrl_,
-
-                                      i2c_slv4_addr_,
-                                      i2c_slv4_reg_,
-                                      i2c_slv4_do_,
-                                      i2c_slv4_ctrl_);
-    }
-
-    auto ICM20948::sleep(bool is_sleep) -> ErrorT<void>
-    {
-        pwr_mgmt_1_.set_bit(registers::PWR_MGMT_1::SLEEP, is_sleep);
-        return {};
-    }
-
-    auto ICM20948::enable_mag() -> ErrorT<void>
-    {
-        user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);
-
-        mag_cntrl2_.set_field(registers::mag::CNTRL2::MODE,
-                              registers::mag::CNTRL2::mode_select::continuous_mesaurement4);
-
-        i2c_mst_ctrl_.set_field(registers::I2C_MST_CTRL::I2C_MST_CLK, 7);
-
-        i2c_slv0_ctrl_.set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)
-            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8);
-        i2c_slv0_addr.set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)
-            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);
-        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address);
-
-        i2c_slv4_ctrl_.set_bit(registers::I2C_SLV4_CTRL::I2C_SLV4_EN, true);
-        i2c_slv4_addr_.set_field(registers::I2C_SLV4_ADDR::I2C_ID_4, 0xC);
-        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG, registers::mag::CNTRL2::address);
-        i2c_slv4_do_.set_field(registers::I2C_SLV4_DI::DI, mag_cntrl2_.bits);
+        TRY(i2c_instance.write(registers::PWR_MGMT_1{}));
+        TRY(set_accel_range(AccelRange::g16));
+        TRY(set_gyro_range(GyroRange::dps2000));
+        TRY(enable_mag());
         return {};
     }
 
@@ -214,18 +167,66 @@ namespace icm20948
     }
 
     /** private **/
-    auto ICM20948::enable_slave(const uint8_t address, const SlaveMode rw, const SlaveNum slv) -> ErrorT<void>
-    {
-        if (!user_ctrl_.get_bit(registers::USER_CTRL::I2C_MST_EN))
-        {
-            user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);
-            if (auto r = i2c_instance.write(user_ctrl_); !r)
-            {
-                return std::unexpected(r.error());
-            }
-        }
-    }
 
+    auto ICM20948::enable_mag() -> ErrorT<void> // Das machen wir so!
+    {
+        mag_cntrl2_.set_field(registers::mag::CNTRL2::MODE,
+                              registers::mag::CNTRL2::mode_select::continuous_mesaurement4);
+
+        // Prepare I2C Master
+        user_ctrl_.set_bit(registers::USER_CTRL::I2C_MST_EN, true);       // Enable Master
+        i2c_mst_ctrl_.set_field(registers::I2C_MST_CTRL::I2C_MST_CLK, 7); // Set I2C clock
+
+        // Prepare SLV4 for writing
+        i2c_slv4_ctrl_.set_bit(registers::I2C_SLV4_CTRL::I2C_SLV4_EN, true); // enable SLV4
+        i2c_slv4_addr_
+            .set_field(registers::I2C_SLV4_ADDR::I2C_ID_4, 0xC)      // set SLV4 address to mag
+            .set_bit(registers::I2C_SLV4_ADDR::I2C_SLV4_RNW, false); // set SLV4 to write
+        i2c_slv4_reg_.set_field(registers::I2C_SLV4_REG::REG,
+                                registers::mag::CNTRL2::address);             // Set register to mag control reg
+        i2c_slv4_do_.set_field(registers::I2C_SLV4_DO::DO, mag_cntrl2_.bits); // write mag control reg
+
+        // Prepare SLV0 for reading
+        i2c_slv0_ctrl_
+            .set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)   // Enable SLV0
+            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8); // Bytes to read
+        i2c_slv0_addr
+            .set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)    // set SLV0 address to mag
+            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true); // set mode to read
+        // i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address); // set read register on
+        // mag
+        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::ST1::address); // set read register on mag
+
+        if (auto r = i2c_instance.write(user_ctrl_,
+                                        i2c_mst_ctrl_,
+                                        i2c_slv4_reg_,
+                                        i2c_slv4_do_,
+                                        i2c_slv0_addr,
+                                        i2c_slv0_reg_,
+                                        i2c_slv4_ctrl_,
+                                        i2c_slv0_ctrl_);
+            !r)
+        {
+            return std::unexpected(r.error());
+        }
+        for ([[maybe_unused]] auto _ : std::views::iota(0, 100))
+        {
+            auto mst_ctrl_status = i2c_instance.read<registers::I2C_MST_STATUS>();
+
+            if (mst_ctrl_status->get_bit(registers::I2C_MST_STATUS::I2C_SLV4_DONE))
+                return {};
+            if (!mst_ctrl_status)
+                return std::unexpected(mst_ctrl_status.error());
+            if (mst_ctrl_status->get_bit(registers::I2C_MST_STATUS::I2C_LOST_ARB))
+                return std::unexpected(ICMErrorT::ic2_mag_arb);
+            if (mst_ctrl_status->get_bit(registers::I2C_MST_STATUS::I2C_SLV4_NACK))
+                return std::unexpected(ICMErrorT::i2c_mag_nack);
+
+            sleep_us(20);
+        }
+
+        return std::unexpected(ICMErrorT::i2c_mag_timeout);
+    }
     /** helpers **/
     auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
     {
