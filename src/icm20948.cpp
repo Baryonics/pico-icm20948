@@ -27,17 +27,15 @@ namespace
         auto int16_buf = int16_t{};
         memcpy(&int16_buf, input.data(), 2);
         if (no_swap)
-        {
             return int16_buf;
-        }
         return std::byteswap(int16_buf);
     }
 
-    void raw_to_vec(std::span<uint8_t> input, Vec3<int16_t>& output)
+    void raw_to_vec(std::span<uint8_t> input, Vec3<int16_t>& output, bool no_swap = false)
     {
-        output.x = array_to_int16(input.subspan(0, 2));
-        output.y = array_to_int16(input.subspan(2, 2));
-        output.z = array_to_int16(input.subspan(4, 2));
+        output.x = array_to_int16(input.subspan(0, 2), no_swap);
+        output.y = array_to_int16(input.subspan(2, 2), no_swap);
+        output.z = array_to_int16(input.subspan(4, 2), no_swap);
     }
 } // namespace
 
@@ -64,8 +62,7 @@ namespace icm20948
         raw_to_vec(data_buf_span.subspan(0, 6), raw_accel);
         raw_to_vec(data_buf_span.subspan(6, 6), raw_gyro);
         auto raw_temp = array_to_int16(data_buf_span.subspan(12, 2));
-        raw_to_vec(data_buf_span.subspan(14, 6), raw_mag);
-
+        raw_to_vec(data_buf_span.subspan(14, 6), raw_mag, true);
         acc_val_ = raw_accel / acc_scale_;
         gyro_val_ = raw_gyro / gyro_scale_;
         temp_val_ = calc_temp_from_raw(raw_temp);
@@ -113,6 +110,8 @@ namespace icm20948
         }
 
         accel_config_.set_field(reg::ACCEL_FS_SEL, fs);
+
+        TRY(i2c_instance.write(accel_config_));
         return {};
     }
 
@@ -146,6 +145,7 @@ namespace icm20948
         }
 
         gyro_config_1_.set_field(reg::GYRO_FS_SEL, fs);
+        TRY(i2c_instance.write(gyro_config_1_));
         return {};
     }
 
@@ -189,7 +189,7 @@ namespace icm20948
         // Prepare SLV0 for reading
         i2c_slv0_ctrl_
             .set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)   // Enable SLV0
-            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8); // Bytes to read
+            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 7); // Bytes to read
         i2c_slv0_addr_
             .set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)                            // set SLV0 address to mag
             .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);                         // set mode to read

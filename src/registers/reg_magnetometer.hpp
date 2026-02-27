@@ -31,17 +31,17 @@ namespace icm20948::registers::mag
         static constexpr Bit<0> DRDY{};
     };
 
-    struct HX : RegBase<addresses::HXH, UserBank::MAG, AccessT::r, uint16_t>
+    struct HX : RegBase<addresses::HXL, UserBank::MAG, AccessT::r, uint16_t>
     {
         static constexpr BitField<0, 15> VAL{};
     };
 
-    struct HY : RegBase<addresses::HYH, UserBank::MAG, AccessT::r, uint16_t>
+    struct HY : RegBase<addresses::HYL, UserBank::MAG, AccessT::r, uint16_t>
     {
         static constexpr BitField<0, 15> VAL{};
     };
 
-    struct HZ : RegBase<addresses::HZH, UserBank::MAG, AccessT::r, uint16_t>
+    struct HZ : RegBase<addresses::HZL, UserBank::MAG, AccessT::r, uint16_t>
     {
         static constexpr BitField<0, 15> VAL{};
     };

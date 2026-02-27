@@ -41,8 +41,6 @@ namespace icm20948
         ErrorT<uint8_t> mag_who_am_i();
 
         /** Temporary debug section **/
-        uint8_t get_slv4_cntrl() { return i2c_instance.read<registers::I2C_SLV4_CTRL>().value().bits; }
-
         template <typename T>
         uint8_t get_raw_reg()
         {
@@ -50,7 +48,7 @@ namespace icm20948
         }
 
       private:
-        static constexpr size_t SENSOR_DATA_LEN = 22;
+        static constexpr size_t SENSOR_DATA_LEN = 21;
         static constexpr float TEMP_SENS = 333.87;
         static constexpr int ROOM_TEMP_OFFS = 21;
 

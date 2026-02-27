@@ -11,6 +11,15 @@
             return std::unexpected(_r.error()); \
     } while (0)
 
+#define TRY_STORE(expr, val)                    \
+    do                                          \
+    {                                           \
+        if (auto _r = (expr); !_r)              \
+            return std::unexpected(_r.error()); \
+        else                                    \
+            val = _r.value();                   \
+    } while (0)
+
 namespace icm20948
 {
     enum class ICMErrorT : uint8_t
