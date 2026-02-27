@@ -189,7 +189,7 @@ namespace icm20948
         // Prepare SLV0 for reading
         i2c_slv0_ctrl_
             .set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)   // Enable SLV0
-            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 7); // Bytes to read
+            .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8); // Bytes to read
         i2c_slv0_addr_
             .set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)                            // set SLV0 address to mag
             .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);                         // set mode to read

@@ -48,7 +48,7 @@ namespace icm20948
         }
 
       private:
-        static constexpr size_t SENSOR_DATA_LEN = 21;
+        static constexpr size_t SENSOR_DATA_LEN = 22;
         static constexpr float TEMP_SENS = 333.87;
         static constexpr int ROOM_TEMP_OFFS = 21;
 
