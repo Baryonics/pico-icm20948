@@ -38,6 +38,16 @@ namespace icm20948
         Vec3<int> get_mag();
 
         ErrorT<uint8_t> who_am_i();
+        ErrorT<uint8_t> mag_who_am_i();
+
+        /** Temporary debug section **/
+        uint8_t get_slv4_cntrl() { return i2c_instance.read<registers::I2C_SLV4_CTRL>().value().bits; }
+
+        template <typename T>
+        uint8_t get_raw_reg()
+        {
+            return i2c_instance.read<T>().value().bits;
+        }
 
       private:
         static constexpr size_t SENSOR_DATA_LEN = 22;
@@ -56,6 +66,7 @@ namespace icm20948
 
         /** helpers **/
         float calc_temp_from_raw(int16_t raw_temp);
+        ErrorT<bool> mag_is_sleep();
         ErrorT<void> enable_mag();
 
         template <typename ValType>
@@ -118,14 +129,14 @@ namespace icm20948
         registers::I2C_MST_STATUS i2c_mst_status_{};
         registers::I2C_MST_CTRL i2c_mst_ctrl_{};
 
-        registers::I2C_SLV0_ADDR i2c_slv0_addr{};
+        registers::I2C_SLV0_ADDR i2c_slv0_addr_{};
         registers::I2C_SLV0_REG i2c_slv0_reg_{};
-        registers::I2C_MST_CTRL i2c_slv0_ctrl_{};
+        registers::I2C_SLV0_CTRL i2c_slv0_ctrl_{};
         registers::I2C_SLV0_DO i2c_slv0_do_{};
 
         registers::I2C_SLV4_ADDR i2c_slv4_addr_{};
         registers::I2C_SLV4_REG i2c_slv4_reg_{};
-        registers::I2C_MST_CTRL i2c_slv4_ctrl_{};
+        registers::I2C_SLV4_CTRL i2c_slv4_ctrl_{};
         registers::I2C_SLV4_DO i2c_slv4_do_{};
 
         /** Magnetometer Config **/

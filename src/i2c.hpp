@@ -8,6 +8,7 @@
 #include <expected>
 #include <pico/error.h>
 #include <pico/stdio.h>
+#include <pico/time.h>
 #include <span>
 
 namespace icm20948
@@ -27,10 +28,11 @@ namespace icm20948
             auto bank_sel = registers::REG_BANK_SEL{};
             bank_sel.set_field(bank_sel.USER_BANK, ub);
             uint8_t buffer[2U] = { bank_sel.address, bank_sel.bits };
-            if (auto r = i2c_write_blocking(i2c_, address, buffer, 2U, false); r < 0U)
+            if (auto r = i2c_write_blocking(i2c_, address, buffer, 2U, false); r < 0)
             {
                 return std::unexpected(ICMErrorT::i2c_write_failed);
             }
+
             current_ub_ = ub;
             return {};
         }
@@ -102,11 +104,12 @@ namespace icm20948
             requires(registers::reg_type<T>)
         ErrorT<void> block_read(std::span<uint8_t> dst)
         {
+            auto reg_addr = T::address;
             if (auto r = select_user_bank(T::user_bank); !r)
             {
                 return std::unexpected(r.error());
             }
-            if (auto r = i2c_write_blocking(i2c_, address, &T::address, 1, true); r < 0)
+            if (auto r = i2c_write_blocking(i2c_, address, &reg_addr, 1, true); r < 0)
             {
                 return std::unexpected(ICMErrorT::i2c_write_failed);
             }

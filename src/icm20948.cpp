@@ -190,26 +190,28 @@ namespace icm20948
         i2c_slv0_ctrl_
             .set_bit(registers::I2C_SLV0_CTRL::I2C_SLV0_EN, true)   // Enable SLV0
             .set_field(registers::I2C_SLV0_CTRL::I2C_SLV0_LENG, 8); // Bytes to read
-        i2c_slv0_addr
-            .set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)    // set SLV0 address to mag
-            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true); // set mode to read
-        // i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address); // set read register on
-        // mag
-        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::ST1::address); // set read register on mag
+        i2c_slv0_addr_
+            .set_field(registers::I2C_SLV0_ADDR::I2C_ID_0, 0x0C)                            // set SLV0 address to mag
+            .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);                         // set mode to read
+        i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address); // set read register on
 
-        if (auto r = i2c_instance.write(user_ctrl_,
-                                        i2c_mst_ctrl_,
-                                        i2c_slv4_reg_,
-                                        i2c_slv4_do_,
-                                        i2c_slv0_addr,
-                                        i2c_slv0_reg_,
-                                        i2c_slv4_ctrl_,
-                                        i2c_slv0_ctrl_);
-            !r)
-        {
-            return std::unexpected(r.error());
-        }
-        for ([[maybe_unused]] auto _ : std::views::iota(0, 100))
+        // i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::ST1::address); // set read register on
+
+        TRY(i2c_instance.write(
+            user_ctrl_, i2c_mst_ctrl_, i2c_slv4_reg_, i2c_slv4_addr_, i2c_slv4_do_, i2c_slv0_addr_, i2c_slv0_reg_));
+
+        // TRY(i2c_instance.write(user_ctrl_));
+        // TRY(i2c_instance.write(i2c_mst_ctrl_));
+        // TRY(i2c_instance.write(i2c_slv4_reg_));
+        // TRY(i2c_instance.write(i2c_slv4_addr_));
+        // TRY(i2c_instance.write(i2c_slv4_do_));
+        // TRY(i2c_instance.write(i2c_slv0_addr_));
+        // TRY(i2c_instance.write(i2c_slv0_reg_));
+
+        TRY(i2c_instance.write(i2c_slv0_ctrl_));
+        TRY(i2c_instance.write(i2c_slv4_ctrl_));
+
+        for ([[maybe_unused]] auto _ : std::views::iota(0, 10))
         {
             auto mst_ctrl_status = i2c_instance.read<registers::I2C_MST_STATUS>();
 
@@ -220,6 +222,8 @@ namespace icm20948
             if (mst_ctrl_status->get_bit(registers::I2C_MST_STATUS::I2C_LOST_ARB))
                 return std::unexpected(ICMErrorT::ic2_mag_arb);
             if (mst_ctrl_status->get_bit(registers::I2C_MST_STATUS::I2C_SLV4_NACK))
+                return std::unexpected(ICMErrorT::i2c_mag_nack);
+            if (mst_ctrl_status->get_bit(registers::I2C_MST_STATUS::I2C_SLV0_NACK))
                 return std::unexpected(ICMErrorT::i2c_mag_nack);
 
             sleep_us(20);
