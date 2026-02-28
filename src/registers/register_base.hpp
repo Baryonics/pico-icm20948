@@ -1,7 +1,6 @@
 #pragma once
 #include <concepts>
 #include <cstdint>
-#include <utility>
 
 namespace icm20948::registers
 {

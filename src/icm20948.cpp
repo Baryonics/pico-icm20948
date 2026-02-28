@@ -1,14 +1,13 @@
 #include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
-#include "pico/stdlib.h"
 #include "pico/time.h"
 #include "reg_magnetometer.hpp"
+#include "register_base.hpp"
 #include "registers/userbank2.hpp"
 #include "userbank0.hpp"
 #include "userbank3.hpp"
 #include <array>
-#include <concepts>
 #include <cstdint>
 #include <expected>
 #include <hardware/i2c.h>
@@ -96,6 +95,8 @@ namespace icm20948
         health.is_sleep = pwr_mgmt_1_.get_bit(registers::PWR_MGMT_1::SLEEP);
         health.is_accel_en = (pwr_mgmt_2_.get_field(registers::PWR_MGMT_2::DISABLE_ACCEL) == 0);
         health.is_gyro_en = (pwr_mgmt_2_.get_field(registers::PWR_MGMT_2::DISABLE_GYRO) == 0);
+
+        return {};
     }
 
     auto ICM20948::init() -> ErrorT<void>

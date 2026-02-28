@@ -1,8 +1,6 @@
 #pragma once
 
 #include <concepts>
-#include <cstddef>
-#include <cstdint>
 
 namespace icm20948
 {
