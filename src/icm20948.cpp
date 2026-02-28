@@ -22,10 +22,20 @@
 namespace
 {
     using namespace icm20948;
+
+    struct RawDataOffsets
+    {
+        static constexpr uint8_t data_len = 6;
+        static constexpr uint8_t temp_data_len = 2;
+        static constexpr uint8_t acc_offs = 0;
+        static constexpr uint8_t gyro_offs = 6;
+        static constexpr uint8_t temp_offs = 2;
+        static constexpr uint8_t mag_offs = 14;
+    };
     auto array_to_int16(std::span<uint8_t> input, bool no_swap = false) -> int16_t
     {
         auto int16_buf = int16_t{};
-        memcpy(&int16_buf, input.data(), 2);
+        memcpy(&int16_buf, input.data(), 2U);
         if (no_swap)
             return int16_buf;
         return std::byteswap(int16_buf);
@@ -33,9 +43,10 @@ namespace
 
     void raw_to_vec(std::span<uint8_t> input, Vec3<int16_t>& output, bool no_swap = false)
     {
-        output.x = array_to_int16(input.subspan(0, 2), no_swap);
-        output.y = array_to_int16(input.subspan(2, 2), no_swap);
-        output.z = array_to_int16(input.subspan(4, 2), no_swap);
+        constexpr auto ax_size{ 2 };
+        output.x = array_to_int16(input.subspan(0U * ax_size, ax_size), no_swap);
+        output.y = array_to_int16(input.subspan(1U * ax_size, ax_size), no_swap);
+        output.z = array_to_int16(input.subspan(2U * ax_size, ax_size), no_swap);
     }
 } // namespace
 
@@ -60,10 +71,10 @@ namespace icm20948
         auto raw_gyro = Vec3<int16_t>{};
         auto raw_mag = Vec3<int16_t>{};
 
-        raw_to_vec(data_buf_span.subspan(0, 6), raw_accel);
-        raw_to_vec(data_buf_span.subspan(6, 6), raw_gyro);
-        auto raw_temp = array_to_int16(data_buf_span.subspan(12, 2));
-        raw_to_vec(data_buf_span.subspan(14, 6), raw_mag, true);
+        raw_to_vec(data_buf_span.subspan(RawDataOffsets::acc_offs, RawDataOffsets::data_len), raw_accel);
+        raw_to_vec(data_buf_span.subspan(RawDataOffsets::gyro_offs, RawDataOffsets::data_len), raw_gyro);
+        auto raw_temp = array_to_int16(data_buf_span.subspan(RawDataOffsets::temp_offs, RawDataOffsets::temp_data_len));
+        raw_to_vec(data_buf_span.subspan(RawDataOffsets::mag_offs, RawDataOffsets::data_len), raw_mag, true);
         acc_val_ = raw_accel / acc_scale_;
         gyro_val_ = raw_gyro / gyro_scale_;
         temp_val_ = calc_temp_from_raw(raw_temp);
