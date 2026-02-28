@@ -30,7 +30,6 @@ namespace icm20948::registers
     };
 
     template <uint8_t Pos>
-
     struct Bit
     {
         constexpr static uint8_t pos = Pos;
@@ -55,7 +54,7 @@ namespace icm20948::registers
             return *this;
         }
 
-        template <uint8_t from, uint8_t to, typename T>
+        template <typename T, uint8_t from, uint8_t to>
             requires((std::is_enum_v<T> or std::integral<T>) and from < to and to < sizeof(RegSizeT) * 8U and
                      (access == AccessT::rw or access == AccessT::w))
         RegBase& set_field(const BitField<from, to>, T value)
@@ -73,8 +72,8 @@ namespace icm20948::registers
             return (bits & (RegSizeT(1) << pos)) != 0;
         }
 
-        template <uint8_t from, uint8_t to, typename T>
-            requires(std::is_enum_v<T> and from < to and to < sizeof(RegSizeT) * 8U and
+        template <typename T = RegSizeT, uint8_t from, uint8_t to>
+            requires((std::is_enum_v<T> or std::integral<T>) and from < to and to < sizeof(RegSizeT) * 8U and
                      (access == AccessT::rw or access == AccessT::r))
         [[nodiscard]] T get_field(const BitField<from, to>) const
         {
