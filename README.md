@@ -1,5 +1,10 @@
 # pico-icm20948
 
+![C++20](https://img.shields.io/badge/C%2B%2B-20-blue)
+![RP2040](https://img.shields.io/badge/RP2040-Pico-green)
+![Pico SDK](https://img.shields.io/badge/Pico%20SDK-required-blueviolet)
+![Status](https://img.shields.io/badge/status-WIP-orange)
+
 A small **C++20 driver/library for the InvenSense ICM-20948** (9-axis IMU) for
 the **Raspberry Pi Pico / RP2040** using the **Pico SDK** (I2C).
 This library is designed for clean, type-safe register access and modern C++20 usage on embedded systems.
