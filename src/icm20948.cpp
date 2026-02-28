@@ -31,6 +31,7 @@ namespace
         static constexpr uint8_t temp_offs = 2;
         static constexpr uint8_t mag_offs = 14;
     };
+
     auto array_to_int16(std::span<uint8_t> input, bool no_swap = false) -> int16_t
     {
         auto int16_buf = int16_t{};
@@ -74,7 +75,7 @@ namespace icm20948
         raw_to_vec(data_buf_span.subspan(RawDataOffsets::gyro_offs, RawDataOffsets::data_len), raw_gyro);
         auto raw_temp = array_to_int16(data_buf_span.subspan(RawDataOffsets::temp_offs, RawDataOffsets::temp_data_len));
         raw_to_vec(data_buf_span.subspan(RawDataOffsets::mag_offs, RawDataOffsets::data_len), raw_mag, true);
-        acc_val_ = raw_accel / acc_scale_;
+        acc_val_ = raw_accel / acc_scale_ * EARTH_ACCEL;
         gyro_val_ = raw_gyro / gyro_scale_;
         temp_val_ = calc_temp_from_raw(raw_temp);
         mag_val_ = raw_mag;

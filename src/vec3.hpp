@@ -31,6 +31,11 @@ namespace icm20948
             return Vec3<float>{ static_cast<float>(x) / f, static_cast<float>(y) / f, static_cast<float>(z) / f };
         }
 
+        Vec3<float> operator*(float const f) const
+        {
+            return Vec3<float>{ static_cast<float>(x) * f, static_cast<float>(y) * f, static_cast<float>(z) * f };
+        }
+
         template <typename U>
             requires(std::integral<U> || std::floating_point<U>)
         auto operator+(const Vec3<U>& other) const

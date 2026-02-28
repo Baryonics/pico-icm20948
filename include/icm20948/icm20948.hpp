@@ -16,9 +16,9 @@
 #include <hardware/i2c.h>
 #include <pico/types.h>
 
-/** BIG TODOS: Magic Numbers, expected **/
 namespace icm20948
 {
+    constexpr inline float EARTH_ACCEL = 9.81;
     struct Health
     {
         // WHO_AM_I
@@ -56,13 +56,6 @@ namespace icm20948
         ErrorT<uint8_t> who_am_i();
         ErrorT<uint8_t> mag_who_am_i();
 
-        /** Temporary debug section **/
-        template <typename T>
-        uint8_t get_raw_reg()
-        {
-            return i2c_instance.read<T>().value().bits;
-        }
-
       private:
         static constexpr uint8_t WHO_AM_I_VAL = 0xEA;
         static constexpr size_t SENSOR_DATA_LEN = 22;
@@ -81,7 +74,6 @@ namespace icm20948
 
         /** helpers **/
         float calc_temp_from_raw(int16_t raw_temp);
-        ErrorT<bool> mag_is_sleep();
         ErrorT<void> enable_mag();
 
         template <typename ValType>
