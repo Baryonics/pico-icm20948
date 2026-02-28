@@ -10,6 +10,8 @@
 #include "registers/userbank2.hpp"
 #include "registers/userbank3.hpp"
 #include "vec3.hpp"
+#include <any>
+#include <array>
 #include <bit>
 #include <concepts>
 #include <cstddef>
@@ -21,11 +23,29 @@
 /** BIG TODOS: Magic Numbers, expected **/
 namespace icm20948
 {
+    struct Health
+    {
+        // WHO_AM_I
+        bool is_responsive{};
+        // USER_CTRL
+        bool is_i2c_mst_en{};
+        bool is_i2c_mst_rst{};
+        // PWR_MGMT_1
+        bool is_reset{};
+        bool is_sleep{};
+        // PWR_MGMT_2
+        bool is_accel_en{};
+        bool is_gyro_en{};
+    };
+
     class ICM20948
     {
       public:
         ICM20948(i2c_inst_t* rp_i2c);
+        Health health{};
+
         ErrorT<void> update();
+        ErrorT<void> update_health();
 
         ErrorT<void> init();
 
@@ -48,6 +68,7 @@ namespace icm20948
         }
 
       private:
+        static constexpr uint8_t WHO_AM_I_VAL = 0xEA;
         static constexpr size_t SENSOR_DATA_LEN = 22;
         static constexpr float TEMP_SENS = 333.87;
         static constexpr int ROOM_TEMP_OFFS = 21;

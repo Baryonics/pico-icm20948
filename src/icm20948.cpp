@@ -47,7 +47,8 @@ namespace icm20948
     }
 
     /** public **/
-    ErrorT<void> ICM20948::update()
+    // todo: Make pretty
+    auto ICM20948::update() -> ErrorT<void>
     {
         auto raw_data_buffer = std::array<uint8_t, SENSOR_DATA_LEN>{};
         auto data_buf_span = std::span(raw_data_buffer);
@@ -69,7 +70,22 @@ namespace icm20948
         mag_val_ = raw_mag;
 
         return {};
-    };
+    }
+    auto ICM20948::update_health() -> ErrorT<void>
+    {
+        auto who = registers::WHO_AM_I{};
+        TRY_STORE(i2c_instance.read<registers::USER_CTRL>(), user_ctrl_);
+        TRY_STORE(i2c_instance.read<registers::PWR_MGMT_1>(), pwr_mgmt_1_);
+        TRY_STORE(i2c_instance.read<registers::PWR_MGMT_2>(), pwr_mgmt_2_);
+
+        health.is_responsive = (who.bits == WHO_AM_I_VAL);
+        health.is_i2c_mst_en = user_ctrl_.get_bit(registers::USER_CTRL::I2C_MST_EN);
+        health.is_i2c_mst_rst = user_ctrl_.get_bit(registers::USER_CTRL::I2C_MST_RST);
+        health.is_reset = pwr_mgmt_1_.get_bit(registers::PWR_MGMT_1::DEVICE_RESET);
+        health.is_sleep = pwr_mgmt_1_.get_bit(registers::PWR_MGMT_1::SLEEP);
+        health.is_accel_en = (pwr_mgmt_2_.get_field(registers::PWR_MGMT_2::DISABLE_ACCEL) == 0);
+        health.is_gyro_en = (pwr_mgmt_2_.get_field(registers::PWR_MGMT_2::DISABLE_GYRO) == 0);
+    }
 
     auto ICM20948::init() -> ErrorT<void>
     {
