@@ -63,10 +63,9 @@ namespace icm20948
     {
         auto raw_data_buffer = std::array<uint8_t, SENSOR_DATA_LEN>{};
         auto data_buf_span = std::span(raw_data_buffer);
-        if (auto r = i2c_instance.block_read<registers::ACCEL_XOUT>(std::span(raw_data_buffer)); !r)
-        {
-            return std::unexpected(r.error());
-        }
+
+        TRY(i2c_instance.block_read<registers::ACCEL_XOUT>(std::span(raw_data_buffer)));
+
         auto raw_accel = Vec3<int16_t>{};
         auto raw_gyro = Vec3<int16_t>{};
         auto raw_mag = Vec3<int16_t>{};
@@ -75,6 +74,7 @@ namespace icm20948
         raw_to_vec(data_buf_span.subspan(RawDataOffsets::gyro_offs, RawDataOffsets::data_len), raw_gyro);
         auto raw_temp = array_to_int16(data_buf_span.subspan(RawDataOffsets::temp_offs, RawDataOffsets::temp_data_len));
         raw_to_vec(data_buf_span.subspan(RawDataOffsets::mag_offs, RawDataOffsets::data_len), raw_mag, true);
+
         acc_val_ = raw_accel / acc_scale_ * EARTH_ACCEL;
         gyro_val_ = raw_gyro / gyro_scale_;
         temp_val_ = calc_temp_from_raw(raw_temp);
@@ -187,12 +187,9 @@ namespace icm20948
 
     auto ICM20948::who_am_i() -> ErrorT<uint8_t>
     {
-        auto r = i2c_instance.read<registers::WHO_AM_I>();
-        if (!r)
-        {
-            return std::unexpected(r.error());
-        }
-        return r.value().bits;
+        auto who = registers::WHO_AM_I{};
+        TRY_STORE(i2c_instance.read<registers::WHO_AM_I>(), who);
+        return who.bits;
     }
 
     /** private **/
@@ -224,18 +221,8 @@ namespace icm20948
             .set_bit(registers::I2C_SLV0_ADDR::I2C_SLV0_RNW, true);                         // set mode to read
         i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::HX::address); // set read register on
 
-        // i2c_slv0_reg_.set_field(registers::I2C_SLV0_REG::REG, registers::mag::ST1::address); // set read register on
-
         TRY(i2c_instance.write(
             user_ctrl_, i2c_mst_ctrl_, i2c_slv4_reg_, i2c_slv4_addr_, i2c_slv4_do_, i2c_slv0_addr_, i2c_slv0_reg_));
-
-        // TRY(i2c_instance.write(user_ctrl_));
-        // TRY(i2c_instance.write(i2c_mst_ctrl_));
-        // TRY(i2c_instance.write(i2c_slv4_reg_));
-        // TRY(i2c_instance.write(i2c_slv4_addr_));
-        // TRY(i2c_instance.write(i2c_slv4_do_));
-        // TRY(i2c_instance.write(i2c_slv0_addr_));
-        // TRY(i2c_instance.write(i2c_slv0_reg_));
 
         TRY(i2c_instance.write(i2c_slv0_ctrl_));
         TRY(i2c_instance.write(i2c_slv4_ctrl_));

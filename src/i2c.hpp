@@ -83,19 +83,20 @@ namespace icm20948
         {
             uint8_t reg_addr = RegType::address;
             RegType reg{};
-            if (auto r = select_user_bank(RegType::user_bank); !r)
-            {
-                return std::unexpected(r.error());
-            }
+
+            TRY(select_user_bank(RegType::user_bank));
+
             if (auto r = i2c_write_blocking(i2c_, address, &reg_addr, 1, true); r < 0)
             {
                 return std::unexpected(ICMErrorT::i2c_write_failed);
             }
+
             uint8_t buffer[sizeof(reg.bits)]{};
             if (auto r = i2c_read_blocking(i2c_, address, buffer, sizeof(reg.bits), false); r < 0)
             {
                 return std::unexpected(ICMErrorT::i2c_read_failed);
             }
+
             memcpy(&reg.bits, buffer, sizeof(reg.bits));
             return reg;
         }
