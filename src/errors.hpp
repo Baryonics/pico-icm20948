@@ -28,7 +28,8 @@ namespace icm20948
         i2c_read_failed,
         i2c_mag_nack,
         ic2_mag_arb,
-        i2c_mag_timeout
+        i2c_mag_timeout,
+        out_of_bounds
     };
 
     template <typename T>
