@@ -1,4 +1,5 @@
 #pragma once
+
 #include "errors.hpp"
 #include "hardware/i2c.h"
 #include "registers/register_base.hpp"
