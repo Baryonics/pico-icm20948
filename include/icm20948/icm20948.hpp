@@ -3,13 +3,13 @@
 #include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
+#include "math.hpp"
 #include "registers/reg_magnetometer.hpp"
 #include "registers/register_base.hpp"
 #include "registers/userbank0.hpp"
 #include "registers/userbank1.hpp"
 #include "registers/userbank2.hpp"
 #include "registers/userbank3.hpp"
-#include "vec3.hpp"
 #include <bit>
 #include <cstddef>
 #include <cstdint>
