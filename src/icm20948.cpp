@@ -1,7 +1,6 @@
 #include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
-#include "pico/time.h"
 #include "reg_magnetometer.hpp"
 #include "register_base.hpp"
 #include "registers/userbank2.hpp"
@@ -10,11 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <expected>
-#include <hardware/i2c.h>
-#include <hardware/timer.h>
 #include <icm20948/icm20948.hpp>
-#include <pico/error.h>
-#include <pico/types.h>
 #include <ranges>
 #include <span>
 

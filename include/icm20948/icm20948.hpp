@@ -11,10 +11,6 @@
 #include "registers/userbank2.hpp"
 #include "registers/userbank3.hpp"
 #include <bit>
-#include <cstddef>
-#include <cstdint>
-#include <hardware/i2c.h>
-#include <pico/types.h>
 
 namespace icm20948
 {

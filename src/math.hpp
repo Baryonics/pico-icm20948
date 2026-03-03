@@ -1,6 +1,5 @@
 #pragma once
 
-#include "errors.hpp"
 #include <array>
 #include <cassert>
 #include <concepts>
