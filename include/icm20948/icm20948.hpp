@@ -18,17 +18,17 @@
 
 namespace icm20948
 {
+    constexpr inline float EARTH_ACCEL = 9.81;
+    constexpr inline Mat3<float> UNIT_MAT = { Vec3<float>{ 1, 0, 0 }, Vec3<float>{ 0, 1, 0 }, Vec3<float>{ 0, 0, 1 } };
+
     struct Calibration
     {
         Vec3<float> accel_bias{};
         Vec3<float> accel_scale{ 1.0, 1.0, 1.0 };
         Vec3<float> gyro_bias{};
         Vec3<float> mag_hard_iron{};
-        // Mat3<float> mag_soft_iron{};
+        Mat3<float> mag_soft_iron{ UNIT_MAT };
     };
-
-    constexpr inline float EARTH_ACCEL = 9.81;
-    constexpr inline Mat3<float> UNIT_MAT = { Vec3<float>{ 1, 0, 0 }, Vec3<float>{ 0, 1, 0 }, Vec3<float>{ 0, 0, 1 } };
 
     struct Health
     {
@@ -56,6 +56,11 @@ namespace icm20948
 
         ErrorT<void> init();
 
+        void calibrate_accel(const Vec3<float>& bias, Vec3<float>& scale);
+        void calibrate_gyro(const Vec3<float>& bias);
+        void calibrate_mag(const Vec3<float>& hard_iron, const Mat3<float>& soft_iron);
+        void calibrate(const Calibration& calibration);
+
         ErrorT<void> set_accel_range(AccelRange range);
         ErrorT<void> set_gyro_range(GyroRange range);
 
@@ -74,9 +79,10 @@ namespace icm20948
         static constexpr int ROOM_TEMP_OFFS = 21;
 
         I2C i2c_instance;
+        Calibration calibration_{};
         Vec3<float> acc_val_{};
         Vec3<float> gyro_val_{};
-        Vec3<int> mag_val_{};
+        Vec3<float> mag_val_{};
         float temp_val_{};
 
         float acc_scale_{};

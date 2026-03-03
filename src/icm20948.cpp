@@ -22,15 +22,6 @@ namespace
 {
     using namespace icm20948;
 
-    struct Calibration
-    {
-        Vec3<float> accel_bias{};
-        Vec3<float> accel_scale{ 1.0, 1.0, 1.0 };
-        Vec3<float> gyro_bias{};
-        Vec3<float> mag_hard_iron{};
-        Mat3<float> mag_soft_iron{ UNIT_MAT };
-    };
-
     struct RawDataOffsets
     {
         static constexpr uint8_t data_len = 6;
@@ -67,7 +58,6 @@ namespace icm20948
     }
 
     /** public **/
-    // todo: Make pretty
     auto ICM20948::update() -> ErrorT<void>
     {
         auto raw_data_buffer = std::array<uint8_t, SENSOR_DATA_LEN>{};
@@ -84,13 +74,14 @@ namespace icm20948
         auto raw_temp = array_to_int16(data_buf_span.subspan(RawDataOffsets::temp_offs, RawDataOffsets::temp_data_len));
         raw_to_vec(data_buf_span.subspan(RawDataOffsets::mag_offs, RawDataOffsets::data_len), raw_mag, true);
 
-        acc_val_ = raw_accel / acc_scale_ * EARTH_ACCEL;
-        gyro_val_ = raw_gyro / gyro_scale_;
+        acc_val_ = (raw_accel / acc_scale_ * EARTH_ACCEL) * calibration_.accel_scale + calibration_.accel_bias;
+        gyro_val_ = (raw_gyro / gyro_scale_) + calibration_.gyro_bias;
         temp_val_ = calc_temp_from_raw(raw_temp);
-        mag_val_ = raw_mag;
+        mag_val_ = calibration_.mag_soft_iron * (raw_mag - calibration_.mag_hard_iron);
 
         return {};
     }
+
     auto ICM20948::update_health() -> ErrorT<void>
     {
         auto who = registers::WHO_AM_I{};
@@ -117,6 +108,22 @@ namespace icm20948
         TRY(enable_mag());
         return {};
     }
+
+    void ICM20948::calibrate_accel(const Vec3<float>& bias, Vec3<float>& scale)
+    {
+        calibration_.accel_bias = bias;
+        calibration_.accel_scale = scale;
+    }
+
+    void ICM20948::calibrate_gyro(const Vec3<float>& bias) { calibration_.gyro_bias = bias; }
+
+    void ICM20948::calibrate_mag(const Vec3<float>& hard_iron, const Mat3<float>& soft_iron)
+    {
+        calibration_.mag_hard_iron = hard_iron;
+        calibration_.mag_soft_iron = soft_iron;
+    }
+
+    void ICM20948::calibrate(const Calibration& calibration) { calibration_ = calibration; }
 
     auto ICM20948::set_accel_range(AccelRange range) -> ErrorT<void>
     {
