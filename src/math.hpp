@@ -15,8 +15,9 @@ namespace icm20948
         requires(std::integral<T> || std::floating_point<T>)
     struct Vec3
     {
-        Vec3() = default;
-        Vec3(T x, T y, T z)
+        constexpr Vec3() = default;
+
+        constexpr Vec3(T x, T y, T z)
             : x(x)
             , y(y)
             , z(z)
@@ -25,7 +26,7 @@ namespace icm20948
 
         template <typename U>
             requires(std::integral<U> || std::floating_point<U>)
-        Vec3(const Vec3<U>& other)
+        constexpr Vec3(const Vec3<U>& other)
             : x(static_cast<T>(other.x))
             , y(static_cast<T>(other.y))
             , z(static_cast<T>(other.z))
@@ -92,15 +93,15 @@ namespace icm20948
         requires(std::integral<T> || std::floating_point<T>)
     struct Mat3
     {
-        Mat3() = default;
+        constexpr Mat3() = default;
 
-        explicit Mat3(const std::array<std::array<T, 3>, 3> mat)
+        constexpr explicit Mat3(const std::array<std::array<T, 3>, 3>& mat)
             : m(mat)
         {
         }
 
-        Mat3(const Vec3<T> col_1, const Vec3<T> col_2, const Vec3<T> col_3)
-            : m{ { col_1.x, col_2.x, col_3.x }, { col_1.y, col_2.y, col_3.y }, { col_1.z, col_2.z, col_3.z } }
+        constexpr Mat3(const Vec3<T> col_1, const Vec3<T> col_2, const Vec3<T> col_3)
+            : m{ { { col_1.x, col_2.x, col_3.x }, { col_1.y, col_2.y, col_3.y }, { col_1.z, col_2.z, col_3.z } } }
         {
         }
 
@@ -108,7 +109,7 @@ namespace icm20948
             requires(std::integral<U> || std::floating_point<U>)
         auto operator*(const Vec3<U>& v) const
         {
-            using R = std::common_type<T, U>;
+            using R = std::common_type_t<T, U>;
             auto range = std::views::iota(uint8_t{ 0 }, uint8_t{ 3 });
             auto out = Vec3<R>{};
             for (auto idx_r : range)
