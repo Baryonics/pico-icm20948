@@ -22,6 +22,15 @@ namespace
 {
     using namespace icm20948;
 
+    struct Calibration
+    {
+        Vec3<float> accel_bias{};
+        Vec3<float> accel_scale{ 1.0, 1.0, 1.0 };
+        Vec3<float> gyro_bias{};
+        Vec3<float> mag_hard_iron{};
+        Mat3<float> mag_soft_iron{ UNIT_MAT };
+    };
+
     struct RawDataOffsets
     {
         static constexpr uint8_t data_len = 6;
