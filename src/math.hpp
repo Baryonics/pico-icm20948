@@ -5,16 +5,12 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
-#include <expected>
-#include <iterator>
 #include <ranges>
 #include <sys/cdefs.h>
 #include <type_traits>
-#include <utility>
 
 namespace icm20948
 {
-
     template <typename T>
         requires(std::integral<T> || std::floating_point<T>)
     struct Vec3
@@ -37,19 +33,19 @@ namespace icm20948
         {
         }
 
-        auto operator/(float const f) const -> Vec3<float>
+        constexpr auto operator/(float const f) const -> Vec3<float>
         {
             return Vec3<float>{ static_cast<float>(x) / f, static_cast<float>(y) / f, static_cast<float>(z) / f };
         }
 
-        auto operator*(float const f) const -> Vec3<float>
+        constexpr auto operator*(float const f) const -> const Vec3<float>
         {
             return Vec3<float>{ static_cast<float>(x) * f, static_cast<float>(y) * f, static_cast<float>(z) * f };
         }
 
         template <typename U>
             requires(std::integral<U> || std::floating_point<U>)
-        auto operator*(const Vec3<U>& other) const
+        const constexpr auto operator*(const Vec3<U>& other) const
         {
             using R = std::common_type_t<T, U>;
 
@@ -60,7 +56,7 @@ namespace icm20948
 
         template <typename U>
             requires(std::integral<U> || std::floating_point<U>)
-        auto operator+(const Vec3<U>& other) const
+        const constexpr auto operator+(const Vec3<U>& other) const
         {
             using R = std::common_type_t<T, U>;
             return Vec3<R>{ static_cast<R>(x) + static_cast<R>(other.x),
@@ -70,7 +66,7 @@ namespace icm20948
 
         template <typename U>
             requires(std::integral<U> || std::floating_point<U>)
-        auto operator-(const Vec3<U>& other) const
+        const constexpr auto operator-(const Vec3<U>& other) const
         {
             using R = std::common_type_t<T, U>;
             return Vec3<R>{ static_cast<R>(x) - static_cast<R>(other.x),
@@ -78,11 +74,27 @@ namespace icm20948
                             static_cast<R>(z) - static_cast<R>(other.z) };
         }
 
-        auto operator=(Vec3<T> const& v) -> Vec3<T>&
+        constexpr auto operator=(const Vec3<T>& other) -> Vec3<T>&
         {
-            x = v.x;
-            y = v.y;
-            z = v.z;
+            x = other.x;
+            y = other.y;
+            z = other.z;
+            return *this;
+        }
+
+        constexpr auto operator+=(const Vec3<T>& other) -> Vec3<T>&
+        {
+            x += other.x;
+            y += other.y;
+            z += other.z;
+            return *this;
+        }
+
+        constexpr auto operator*=(const Vec3<T>& other) -> Vec3<T>&
+        {
+            x *= other.x;
+            y *= other.y;
+            z *= other.z;
             return *this;
         }
 
