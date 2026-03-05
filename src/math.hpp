@@ -138,4 +138,6 @@ namespace icm20948
 
         std::array<std::array<T, 3>, 3> m{ {} }; // m[row][col]
     };
+
+    constexpr inline Mat3<float> UNIT_MAT = { Vec3<float>{ 1, 0, 0 }, Vec3<float>{ 0, 1, 0 }, Vec3<float>{ 0, 0, 1 } };
 } // namespace icm20948

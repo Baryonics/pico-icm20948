@@ -7,13 +7,15 @@
 
 namespace icm20948::calibration
 {
-    constexpr inline Mat3<float> UNIT_MAT = { Vec3<float>{ 1, 0, 0 }, Vec3<float>{ 0, 1, 0 }, Vec3<float>{ 0, 0, 1 } };
+    inline constexpr auto INT16_MAX_DIGITS = uint8_t{ 6 }; // -32,768 to 32,767
+    inline constexpr auto INT32_MAX_DIGITS = uint8_t{ 10 };
+    inline constexpr auto CALIB_MSG_SIZE = uint8_t{ 9 * INT16_MAX_DIGITS + INT32_MAX_DIGITS + 12 };
 
     struct CalibrationSample
     {
-        Vec3<float> acc_val{};
-        Vec3<float> gyro_val{};
-        Vec3<float> mag_val{};
+        Vec3<int16_t> acc_val{};
+        Vec3<int16_t> gyro_val{};
+        Vec3<int16_t> mag_val{};
         uint32_t time_stamp{};
     };
 
@@ -25,6 +27,7 @@ namespace icm20948::calibration
         Vec3<float> mag_hard_iron{};
         Mat3<float> mag_soft_iron{ UNIT_MAT };
     };
+
     constexpr size_t MSG_OFFSET{ 10 }; // Not sure. This is an estimate, needs further dev
     constexpr size_t MSG_SIZE = sizeof(CalibrationSample) + MSG_OFFSET;
 

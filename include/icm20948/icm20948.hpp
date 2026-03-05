@@ -38,7 +38,7 @@ namespace icm20948
         Vec3<int16_t> raw_acc_val{};
         Vec3<int16_t> raw_gyro_val{};
         Vec3<int16_t> raw_mag_val{};
-        float raw_temp_val{};
+        uint16_t raw_temp_val{};
         uint32_t time_stamp{};
     };
 
@@ -76,6 +76,7 @@ namespace icm20948
         Vec3<float> get_mag();
         float get_temp();
         void get_measurement(Measurement& msr);
+        void get_raw_measurements(RawMeasurement& raw_msr);
 
         ErrorT<uint8_t> who_am_i();
         ErrorT<uint8_t> mag_who_am_i();

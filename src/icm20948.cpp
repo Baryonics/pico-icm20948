@@ -251,6 +251,8 @@ namespace icm20948
         measurements_.temp_val = get_temp();
     }
 
+    auto ICM20948::get_raw_measurements(RawMeasurement& raw_meas) -> void { raw_meas = raw_measurements_; }
+
     /** private **/
 
     auto ICM20948::enable_mag() -> ErrorT<void> // Das machen wir so!
