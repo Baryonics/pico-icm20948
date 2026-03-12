@@ -100,6 +100,13 @@ namespace icm20948
         constexpr auto operator[](const uint8_t idx) -> T& { return (idx == 0) ? x : (idx == 1 ? y : z); }
         constexpr auto operator[](const uint8_t idx) const -> const T& { return (idx == 0) ? x : (idx == 1 ? y : z); }
 
+        constexpr auto is_zero() -> bool
+        {
+            if (x + y + y == 0)
+                return true;
+            return false;
+        }
+
         T x, y, z;
     };
 
