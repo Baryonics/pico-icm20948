@@ -1,6 +1,7 @@
 #include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
+#include "math.hpp"
 #include "reg_magnetometer.hpp"
 #include "register_base.hpp"
 #include "registers/userbank2.hpp"
@@ -8,6 +9,7 @@
 #include "userbank3.hpp"
 #include <array>
 #include <cstdint>
+#include <cstdio>
 #include <expected>
 #include <hardware/timer.h>
 #include <icm20948/icm20948.hpp>
@@ -71,7 +73,8 @@ namespace icm20948
                    raw_measurements_.raw_mag_val,
                    true);
 
-        raw_measurements_.time_stamp = time_us_32();
+        health.is_all_zero = raw_measurements_.raw_mag_val.is_zero() && raw_measurements_.raw_acc_val.is_zero() &&
+                             raw_measurements_.raw_gyro_val.is_zero();
 
         get_measurement(measurements_);
 
@@ -102,6 +105,12 @@ namespace icm20948
         TRY(set_accel_range(AccelRange::g16));
         TRY(set_gyro_range(GyroRange::dps2000));
         TRY(enable_mag());
+        return {};
+    }
+
+    auto ICM20948::wake() -> ErrorT<void>
+    {
+        TRY(i2c_instance.write(registers::PWR_MGMT_1{}));
         return {};
     }
 
@@ -193,44 +202,31 @@ namespace icm20948
     /** Sensor Getters **/
     auto ICM20948::get_accel() -> Vec3<float>
     {
-        if (measurements_.time_stamp != raw_measurements_.time_stamp)
-        {
-            measurements_.acc_val =
-                (raw_measurements_.raw_acc_val / acc_scale_ * EARTH_ACCEL) * calibration_.accel_scale +
-                calibration_.accel_bias;
-        }
+        measurements_.acc_val = (raw_measurements_.raw_acc_val / acc_scale_ * EARTH_ACCEL) * calibration_.accel_scale +
+                                calibration_.accel_bias;
 
         return measurements_.acc_val;
     }
 
     auto ICM20948::get_gyro() -> Vec3<float>
     {
-        if (measurements_.time_stamp != raw_measurements_.time_stamp)
-        {
-            measurements_.gyro_val = (raw_measurements_.raw_gyro_val / gyro_scale_) + calibration_.gyro_bias;
-        }
+        measurements_.gyro_val = (raw_measurements_.raw_gyro_val / gyro_scale_) + calibration_.gyro_bias;
 
         return measurements_.gyro_val;
     }
 
     auto ICM20948::get_mag() -> Vec3<float>
     {
-        if (measurements_.time_stamp != raw_measurements_.time_stamp)
-        {
-            measurements_.gyro_val =
-                calibration_.mag_soft_iron * (raw_measurements_.raw_mag_val - calibration_.mag_hard_iron);
-        }
+        measurements_.gyro_val =
+            calibration_.mag_soft_iron * (raw_measurements_.raw_mag_val - calibration_.mag_hard_iron);
 
         return measurements_.mag_val;
     };
 
     auto ICM20948::get_temp() -> float
     {
-        if (measurements_.time_stamp != raw_measurements_.time_stamp)
-        {
-            measurements_.temp_val =
-                ((static_cast<int>(raw_measurements_.raw_temp_val) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
-        }
+        measurements_.temp_val =
+            ((static_cast<int>(raw_measurements_.raw_temp_val) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
 
         return measurements_.temp_val;
     }
@@ -244,11 +240,10 @@ namespace icm20948
 
     auto ICM20948::get_measurement(Measurement& msr) -> void
     {
-        measurements_.time_stamp = raw_measurements_.time_stamp;
-        measurements_.acc_val = get_accel();
-        measurements_.gyro_val = get_gyro();
-        measurements_.mag_val = get_gyro();
-        measurements_.temp_val = get_temp();
+        msr.acc_val = get_accel();
+        msr.gyro_val = get_gyro();
+        msr.mag_val = get_gyro();
+        msr.temp_val = get_temp();
     }
 
     auto ICM20948::get_raw_measurements(RawMeasurement& raw_meas) -> void { raw_meas = raw_measurements_; }

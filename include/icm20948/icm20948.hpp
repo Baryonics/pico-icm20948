@@ -31,6 +31,7 @@ namespace icm20948
         // PWR_MGMT_2
         bool is_accel_en{};
         bool is_gyro_en{};
+        bool is_all_zero{};
     };
 
     struct RawMeasurement
@@ -39,7 +40,6 @@ namespace icm20948
         Vec3<int16_t> raw_gyro_val{};
         Vec3<int16_t> raw_mag_val{};
         uint16_t raw_temp_val{};
-        uint32_t time_stamp{};
     };
 
     struct Measurement
@@ -48,7 +48,6 @@ namespace icm20948
         Vec3<float> gyro_val{};
         Vec3<float> mag_val{};
         float temp_val{};
-        uint32_t time_stamp{};
     };
 
     class ICM20948
@@ -61,6 +60,7 @@ namespace icm20948
         ErrorT<void> update_health();
 
         ErrorT<void> init();
+        ErrorT<void> wake();
 
         void calibrate_accel(const Vec3<float>& bias, const Vec3<float>& scale);
         void calibrate_gyro(const Vec3<float>& bias);

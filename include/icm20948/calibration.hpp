@@ -16,7 +16,6 @@ namespace icm20948::calibration
         Vec3<int16_t> acc_val{};
         Vec3<int16_t> gyro_val{};
         Vec3<int16_t> mag_val{};
-        uint32_t time_stamp{};
     };
 
     struct Calibration

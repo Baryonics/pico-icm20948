@@ -9,21 +9,20 @@
 #include <ranges>
 #include <stdio.h>
 
-auto print_vec(const icm20948::Vec3<int16_t>& vec) -> void
+auto print_vec(const icm20948::Vec3<float>& vec) -> void
 {
     for (auto idx : std::views::iota(0, 3))
     {
-        printf("%d,", vec[idx]);
+        printf("%.6f,", vec[idx]);
     }
 }
 
-auto print_calib_message(icm20948::RawMeasurement& raw_vals)
+auto print_calib_message(icm20948::Measurement& vals)
 {
-    printf("S %d,", raw_vals.time_stamp);
-    print_vec(raw_vals.raw_acc_val);
-    print_vec(raw_vals.raw_gyro_val);
-    print_vec(raw_vals.raw_mag_val);
-    printf("%d H\n", raw_vals.raw_temp_val);
+    print_vec(vals.acc_val);
+    print_vec(vals.gyro_val);
+    print_vec(vals.mag_val);
+    printf("\n");
 }
 
 auto main() -> int
@@ -42,21 +41,30 @@ auto main() -> int
         error_cnt++;
     }
 
-    icm20948::RawMeasurement raw_vals{};
+    icm20948::Measurement vals{};
 
     while (true)
     {
+        icm.update_health();
         while (!icm.update())
         {
             error_cnt++;
         }
 
-        icm.get_raw_measurements(raw_vals);
+        if (icm.health.is_all_zero)
+        {
+            while (!icm.init())
+            {
+                error_cnt++;
+            }
+        }
+
+        icm.get_measurement(vals);
 
         if (error_cnt)
             printf(" \n# Errors %d \n", error_cnt);
 
-        print_calib_message(raw_vals);
+        print_calib_message(vals);
         sleep_ms(100);
     }
 }
