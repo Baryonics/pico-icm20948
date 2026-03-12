@@ -17,7 +17,7 @@ namespace icm20948
     class I2C
     {
         i2c_inst_t* i2c_{};
-        registers::UserBank current_ub_ = registers::UserBank::UB0;
+        registers::UserBank current_ub_ = registers::UserBank::UB3;
         constexpr static uint8_t address = 0b1101000;
 
         ErrorT<void> select_user_bank(const registers::UserBank& ub)
