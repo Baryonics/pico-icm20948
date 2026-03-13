@@ -45,26 +45,15 @@ auto main() -> int
 
     while (true)
     {
-        icm.update_health();
         while (!icm.update())
         {
             error_cnt++;
         }
 
-        if (icm.health.is_all_zero)
-        {
-            while (!icm.init())
-            {
-                error_cnt++;
-            }
-        }
-
         icm.get_measurement(vals);
 
-        if (error_cnt)
-            printf(" \n# Errors %d \n", error_cnt);
-
         print_calib_message(vals);
-        sleep_ms(100);
+
+        sleep_ms(20); // my god python is so slow
     }
 }
