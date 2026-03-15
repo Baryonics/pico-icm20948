@@ -47,8 +47,8 @@ def fit_params(
     A = np.array(
         [
             [params[3], params[4], params[5]],
-            [params[4], params[6], params[7]],
-            [params[5], params[7], params[8]],
+            [params[6], params[7], params[8]],
+            [params[9], params[10], params[11]],
         ]
     )
     return result.success, b, A
@@ -56,42 +56,72 @@ def fit_params(
 
 def plot_data(
     data: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64],
+    A: npt.NDArray[np.float64],
 ):
-    def set_equal_axes(ax):
-        limits = np.array(
-            [
-                ax.get_xlim(),
-                ax.get_ylim(),
-                ax.get_zlim(),
-            ]
+    def set_equal_axes(ax, data: npt.NDArray[np.float64]):
+        x = data[:, 0]
+        y = data[:, 1]
+        z = data[:, 2]
+
+        xmid = (x.min() + x.max()) / 2.0
+        ymid = (y.min() + y.max()) / 2.0
+        zmid = (z.min() + z.max()) / 2.0
+
+        radius = (
+            max(
+                x.max() - x.min(),
+                y.max() - y.min(),
+                z.max() - z.min(),
+            )
+            / 2.0
         )
-        center = limits.mean(axis=1)
-        radius = (limits[:, 1] - limits[:, 0]).max() / 2
 
-        ax.set_xlim(center[0] - radius, center[0] + radius)
-        ax.set_ylim(center[1] - radius, center[1] + radius)
-        ax.set_zlim(center[2] - radius, center[2] + radius)
+        ax.set_xlim(xmid - radius, xmid + radius)
+        ax.set_ylim(ymid - radius, ymid + radius)
+        ax.set_zlim(zmid - radius, zmid + radius)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
+    corrected = (data - b) @ A.T
 
-    ax.scatter(
+    fig1 = plt.figure("Raw magnetometer data")
+    ax1 = fig1.add_subplot(111, projection="3d")
+
+    ax1.scatter(
         data[:, 0],
         data[:, 1],
-        data[:, 2],
+        data[:, 2],  # type: ignore[attr-defined]
         s=5,
         label="raw data",
         alpha=0.6,
     )
 
-    ax.set_xlabel("mag_x")
-    ax.set_ylabel("mag_y")
-    ax.set_zlabel("mag_z")
+    ax1.set_xlabel("mag_x")
+    ax1.set_ylabel("mag_y")
+    ax1.set_zlabel("mag_z")
+    ax1.legend()
+    ax1.set_title("Raw magnetometer data")
+    set_equal_axes(ax1, data)
+    ax1.set_box_aspect([1, 1, 1])
 
-    ax.legend()
-    ax.set_title("Magnetometer calibration")
-    set_equal_axes(ax)
+    fig2 = plt.figure("Corrected magnetometer data")
+    ax2 = fig2.add_subplot(111, projection="3d")
 
+    ax2.scatter(
+        corrected[:, 0],
+        corrected[:, 1],
+        corrected[:, 2],  # type: ignore[attr-defined]
+        s=5,
+        label="corrected data",
+        alpha=0.6,
+    )
+
+    ax2.set_xlabel("mag_x")
+    ax2.set_ylabel("mag_y")
+    ax2.set_zlabel("mag_z")
+    ax2.legend()
+    ax2.set_title("Corrected magnetometer data")
+    set_equal_axes(ax2, corrected)
+    ax2.set_box_aspect([1, 1, 1])
     plt.show()
 
 
@@ -99,11 +129,12 @@ def main():
     args = parse_args()
     df = pd.read_csv(args.input)
     data = df.values
+    center0 = data.mean(axis=0)
     x0 = np.array(
         [
-            0,
-            0,
-            0,
+            center0[0],
+            center0[1],
+            center0[2],
             1,
             0,
             0,
@@ -116,7 +147,6 @@ def main():
         ],
         dtype=float,
     )
-
     is_succesfull, b, A = fit_params(x0, residuals, df)
 
     if is_succesfull:
@@ -124,8 +154,20 @@ def main():
     else:
         print("Your data is bad. Do one more dance")
 
+    corrected_data = (data - b) @ A.T
     print(b, A)
-    plot_data(data)
+    corrected_data = (data - b) @ A.T
+    r = np.linalg.norm(corrected_data, axis=1)
+
+    print("b =", b)
+    print("A =\n", A)
+    print("rank(A) =", np.linalg.matrix_rank(A))
+    print("det(A) =", np.linalg.det(A))
+    print("radius mean =", r.mean())
+    print("radius std =", r.std())
+    print("radius min =", r.min())
+    print("radius max =", r.max())
+    plot_data(data, b, A)
 
 
 if __name__ == "__main__":
