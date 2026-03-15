@@ -125,6 +125,22 @@ def plot_data(
     plt.show()
 
 
+def print_cpp_mat3(A: np.ndarray):
+    print("constexpr Mat3<float> MAG_CAL_A = {")
+    for col in range(3):
+        print(
+            f"    Vec3<float>{{ {A[0, col]:.8e}f, {A[1, col]:.8e}f, {A[2, col]:.8e}f }},"
+        )
+    print("};")
+
+
+def print_cpp_vec3(b: np.ndarray):
+    print(
+        f"constexpr Vec3<float> MAG_CAL_B = "
+        f"Vec3<float>{{ {b[0]:.8f}f, {b[1]:.8f}f, {b[2]:.8f}f }};"
+    )
+
+
 def main():
     args = parse_args()
     df = pd.read_csv(args.input)
@@ -149,13 +165,7 @@ def main():
     )
     is_succesfull, b, A = fit_params(x0, residuals, df)
 
-    if is_succesfull:
-        print("Cool data, here are your parameters!")
-    else:
-        print("Your data is bad. Do one more dance")
-
     corrected_data = (data - b) @ A.T
-    print(b, A)
     corrected_data = (data - b) @ A.T
     r = np.linalg.norm(corrected_data, axis=1)
 
@@ -167,6 +177,14 @@ def main():
     print("radius std =", r.std())
     print("radius min =", r.min())
     print("radius max =", r.max())
+    if is_succesfull:
+        print("\nCool data, here are your parameters!")
+    else:
+        print("\nYour data is bad. Do one more dance")
+
+    print("\nCopy these to your firmware:\n")
+    print_cpp_mat3(A)
+    print_cpp_vec3(b)
     plot_data(data, b, A)
 
 
