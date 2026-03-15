@@ -83,8 +83,6 @@ def main():
 
     fig.canvas.mpl_connect("key_press_event", on_key)
 
-    threading.Thread(target=on_key, daemon=True).start()
-
     def update(_):
         if not running:
             return (scatter,)
