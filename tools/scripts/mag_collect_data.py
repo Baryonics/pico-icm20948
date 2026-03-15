@@ -1,9 +1,28 @@
+#!/usr/bin/env python3
+
 import threading
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import serial
 import common.serial_data as s_data
 import pandas as pd
+import argparse
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Collect magnetometer data and save to CSV"
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        help="Serial port (e.g. /dev/ttyACM0)",
+        default="/dev/ttyACM0",
+    )
+    parser.add_argument(
+        "-o", "--output", help="Output CSV file", default="mag_data.csv"
+    )
+    return parser.parse_args()
 
 
 def padded_limits(values: list[float]) -> tuple[float, float]:
@@ -17,8 +36,27 @@ def padded_limits(values: list[float]) -> tuple[float, float]:
     return vmin - pad, vmax + pad
 
 
-def __main__():
-    ser = serial.Serial("/dev/ttyACM0", 115200, timeout=1)
+def main():
+    running = True
+    args = parse_args()
+
+    port = args.port
+    output = args.output
+
+    print("Port:", port)
+    print("Output:", output)
+
+    def stop_script():
+        nonlocal running
+        if not running:
+            return
+        running = False
+        ani.event_source.stop()
+        if ser.is_open:
+            ser.close()
+        plt.close(fig)
+
+    ser = serial.Serial(port, 115200, timeout=1)
 
     x_data: list[float] = []
     y_data: list[float] = []
@@ -36,19 +74,20 @@ def __main__():
     def save_data():
         data = {"mag_x": x_data, "mag_y": y_data, "mag_z": z_data}
         df = pd.DataFrame(data)
-        df.to_csv("mag_data.csv", index=False)
+        df.to_csv(output, index=False)
 
     def on_key(event):
         if event.key == " ":
-            print("animation stopped")
-            ani.event_source.stop()
             save_data()
+            stop_script()
 
     fig.canvas.mpl_connect("key_press_event", on_key)
 
     threading.Thread(target=on_key, daemon=True).start()
 
     def update(_):
+        if not running:
+            return (scatter,)
         try:
             line = ser.readline()
             if not line:
@@ -85,4 +124,5 @@ def __main__():
     plt.show()
 
 
-__main__()
+if __name__ == "__main__":
+    main()
