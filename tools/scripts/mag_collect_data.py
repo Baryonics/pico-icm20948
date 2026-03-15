@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import threading
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import serial
