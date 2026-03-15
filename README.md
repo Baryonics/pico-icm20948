@@ -4,7 +4,7 @@
 ![RP2040](https://img.shields.io/badge/RP2040-Pico-green)
 ![Pico SDK](https://img.shields.io/badge/Pico%20SDK-required-blueviolet)
 
-A small **C++20 driver/library for the InvenSense ICM-20948** (9-axis IMU) for
+A small **C++20 driver/library for the InvenSense ICM-20948** (9-axis IMU) with calibration scripts and dedicated firmware for
 the **Raspberry Pi Pico / RP2040** using the **Pico SDK** (I2C).
 This library is designed for clean, type-safe register access and modern C++20 usage on embedded systems.
 
@@ -15,13 +15,14 @@ This library is designed for clean, type-safe register access and modern C++20 u
 ## Features
 
 - Read:
-  - Accelerometer ( $\frac{m}{s^2}$ )
-  - Gyroscope ( $\frac{\text{deg}}{s}$)
+  - Accelerometer ( $m/s^2$ )
+  - Gyroscope ( $deg/s$)
   - Magnetometer ( $\mu T$ )
   - Temperature ( $^\circ C$ )
 - Configure accel/gyro ranges
 - Basic health/status checks
-- Simple `Vec3` struct for data handling
+- Simple `Vec3` and `Mat3` struct for data handling
+- Magnetometer calibration with the dedicated calibration firmware and scripts
 - Error handling based on an `expected`-style API (`ErrorT<T>`)
   - No exceptions
   - Errors are propagated explicitly
@@ -101,6 +102,49 @@ imu.update_health();
 if (!imu.health.is_responsive) {
     // sensor not responding
 }
+```
+
+## Calibration
+
+### Calibration firmware
+
+The dedicated calibration firmware sends samples via UART/USB. For calibration you need to build the calibration firmware and upload it to your device. <br>
+After your device is connected, run the calibration script to obtain the needed calibration parameters.
+
+```
+cd tools/calibration_firmware
+cmake -S . -B build && cd build
+make
+```
+
+### Magnetometer calibration
+
+To calibrate the magnetometer, run the script `tools/scripts/mag_collect_data.py`. Rotate your device on every axis. When you collected enough data, just press space to exit the program. Your data will be saved in a CSV file.
+After collecting data, you need to run `tools/scripts/mag_get_calib_params.py` to retrieve the calibration parameters. <br>
+This script output is a formatted `Mat3<float>` object for soft iron bias, as well as a `Vec3<float>` object for hard iron bias. Copy those to your firmware and run the `ICM20948::calibrate_mag(hard_iron, soft_iron);`
+to save the calibration parameters
+
+```
+❯ ./mag_collect_data.py -h
+usage: mag_collect_data.py [-h] [-p PORT] [-o OUTPUT]
+
+Collect magnetometer data and save to CSV. Press SPACE in the plot window to stop recording and save the data.
+
+options:
+  -h, --help           show this help message and exit
+  -p, --port PORT      Serial port (e.g. /dev/ttyACM0)
+  -o, --output OUTPUT  Output CSV file
+```
+
+```
+❯ ./mag_get_calib_params.py -h
+usage: mag_get_calib_params.py [-h] [-i INPUT]
+
+Calculate calibration parameters from CSV
+
+options:
+  -h, --help         show this help message and exit
+  -i, --input INPUT  Input CSV file
 ```
 
 ## Error handling
