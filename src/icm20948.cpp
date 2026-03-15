@@ -217,7 +217,7 @@ namespace icm20948
 
     auto ICM20948::get_mag() -> Vec3<float>
     {
-        measurements_.gyro_val =
+        measurements_.mag_val =
             calibration_.mag_soft_iron * (raw_measurements_.raw_mag_val - calibration_.mag_hard_iron);
 
         return measurements_.mag_val;
@@ -242,7 +242,7 @@ namespace icm20948
     {
         msr.acc_val = get_accel();
         msr.gyro_val = get_gyro();
-        msr.mag_val = get_gyro();
+        msr.mag_val = get_mag();
         msr.temp_val = get_temp();
     }
 
