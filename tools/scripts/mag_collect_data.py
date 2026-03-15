@@ -46,26 +46,6 @@ def is_outlier(x, y, z):
     return False
 
 
-# def is_outlier(
-#     mx: float,
-#     my: float,
-#     mz: float,
-#     x_data: list[float],
-#     y_data: list[float],
-#     z_data: list[float],
-#     max_jump: float = 100.0,
-# ) -> bool:
-#     if not x_data:
-#         return False
-#
-#     dx = mx - x_data[-1]
-#     dy = my - y_data[-1]
-#     dz = mz - z_data[-1]
-#
-#     dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-#     return dist > max_jump
-
-
 def main():
     running = True
     args = parse_args()
