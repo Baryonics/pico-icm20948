@@ -6,11 +6,16 @@ import serial
 import common.serial_data as s_data
 import pandas as pd
 import argparse
+import math
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Collect magnetometer data and save to CSV"
+        description="""
+    Collect magnetometer data and save to CSV.
+
+    Press SPACE in the plot window to stop recording and save the data.
+    """
     )
     parser.add_argument(
         "-p",
@@ -33,6 +38,32 @@ def padded_limits(values: list[float]) -> tuple[float, float]:
 
     pad = (vmax - vmin) * 0.1
     return vmin - pad, vmax + pad
+
+
+def is_outlier(x, y, z):
+    if x**2 + y**2 + z**2 > 400000:
+        return True
+    return False
+
+
+# def is_outlier(
+#     mx: float,
+#     my: float,
+#     mz: float,
+#     x_data: list[float],
+#     y_data: list[float],
+#     z_data: list[float],
+#     max_jump: float = 100.0,
+# ) -> bool:
+#     if not x_data:
+#         return False
+#
+#     dx = mx - x_data[-1]
+#     dy = my - y_data[-1]
+#     dz = mz - z_data[-1]
+#
+#     dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+#     return dist > max_jump
 
 
 def main():
@@ -97,7 +128,9 @@ def main():
             mz = float(sample.mag[2])
 
             print(f"mag = {mx}, {my}, {mz}")
-
+            if is_outlier(mx, my, mz):
+                print(f"ignoring outlier: {mx}, {my}, {mz}")
+                return (scatter,)
             x_data.append(mx)
             y_data.append(my)
             z_data.append(mz)
@@ -117,7 +150,7 @@ def main():
 
         return (scatter,)
 
-    ani = FuncAnimation(fig, update, interval=5, blit=False)
+    ani = FuncAnimation(fig, update, interval=5, blit=False, cache_frame_data=False)
     plt.show()
 
 
