@@ -26,10 +26,4 @@ namespace icm20948::calibration
         Vec3<float> mag_hard_iron{};
         Mat3<float> mag_soft_iron{ UNIT_MAT };
     };
-
-    constexpr size_t MSG_OFFSET{ 10 }; // Not sure. This is an estimate, needs further dev
-    constexpr size_t MSG_SIZE = sizeof(CalibrationSample) + MSG_OFFSET;
-
-    auto to_csv_line(const CalibrationSample& sample) -> std::array<char, MSG_SIZE>;
-
 } // namespace icm20948::calibration
