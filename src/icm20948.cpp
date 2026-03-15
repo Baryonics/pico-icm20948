@@ -1,7 +1,7 @@
 #include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
-#include "pico/time.h"
+#include "math.hpp"
 #include "reg_magnetometer.hpp"
 #include "register_base.hpp"
 #include "registers/userbank2.hpp"
@@ -9,12 +9,10 @@
 #include "userbank3.hpp"
 #include <array>
 #include <cstdint>
+#include <cstdio>
 #include <expected>
-#include <hardware/i2c.h>
 #include <hardware/timer.h>
 #include <icm20948/icm20948.hpp>
-#include <pico/error.h>
-#include <pico/types.h>
 #include <ranges>
 #include <span>
 
@@ -58,7 +56,6 @@ namespace icm20948
     }
 
     /** public **/
-    // todo: Make pretty
     auto ICM20948::update() -> ErrorT<void>
     {
         auto raw_data_buffer = std::array<uint8_t, SENSOR_DATA_LEN>{};
@@ -66,22 +63,24 @@ namespace icm20948
 
         TRY(i2c_instance.block_read<registers::ACCEL_XOUT>(std::span(raw_data_buffer)));
 
-        auto raw_accel = Vec3<int16_t>{};
-        auto raw_gyro = Vec3<int16_t>{};
-        auto raw_mag = Vec3<int16_t>{};
+        raw_to_vec(data_buf_span.subspan(RawDataOffsets::acc_offs, RawDataOffsets::data_len),
+                   raw_measurements_.raw_acc_val);
+        raw_to_vec(data_buf_span.subspan(RawDataOffsets::gyro_offs, RawDataOffsets::data_len),
+                   raw_measurements_.raw_gyro_val);
+        raw_measurements_.raw_temp_val =
+            array_to_int16(data_buf_span.subspan(RawDataOffsets::temp_offs, RawDataOffsets::temp_data_len));
+        raw_to_vec(data_buf_span.subspan(RawDataOffsets::mag_offs, RawDataOffsets::data_len),
+                   raw_measurements_.raw_mag_val,
+                   true);
 
-        raw_to_vec(data_buf_span.subspan(RawDataOffsets::acc_offs, RawDataOffsets::data_len), raw_accel);
-        raw_to_vec(data_buf_span.subspan(RawDataOffsets::gyro_offs, RawDataOffsets::data_len), raw_gyro);
-        auto raw_temp = array_to_int16(data_buf_span.subspan(RawDataOffsets::temp_offs, RawDataOffsets::temp_data_len));
-        raw_to_vec(data_buf_span.subspan(RawDataOffsets::mag_offs, RawDataOffsets::data_len), raw_mag, true);
+        health.is_all_zero = raw_measurements_.raw_mag_val.is_zero() && raw_measurements_.raw_acc_val.is_zero() &&
+                             raw_measurements_.raw_gyro_val.is_zero();
 
-        acc_val_ = raw_accel / acc_scale_ * EARTH_ACCEL;
-        gyro_val_ = raw_gyro / gyro_scale_;
-        temp_val_ = calc_temp_from_raw(raw_temp);
-        mag_val_ = raw_mag;
+        get_measurement(measurements_);
 
         return {};
     }
+
     auto ICM20948::update_health() -> ErrorT<void>
     {
         auto who = registers::WHO_AM_I{};
@@ -108,6 +107,28 @@ namespace icm20948
         TRY(enable_mag());
         return {};
     }
+
+    auto ICM20948::wake() -> ErrorT<void>
+    {
+        TRY(i2c_instance.write(registers::PWR_MGMT_1{}));
+        return {};
+    }
+
+    void ICM20948::calibrate_accel(const Vec3<float>& bias, const Vec3<float>& scale)
+    {
+        calibration_.accel_bias = bias;
+        calibration_.accel_scale = scale;
+    }
+
+    void ICM20948::calibrate_gyro(const Vec3<float>& bias) { calibration_.gyro_bias = bias; }
+
+    void ICM20948::calibrate_mag(const Vec3<float>& hard_iron, const Mat3<float>& soft_iron)
+    {
+        calibration_.mag_hard_iron = hard_iron;
+        calibration_.mag_soft_iron = soft_iron;
+    }
+
+    void ICM20948::calibrate(const calibration::Calibration& calibration) { calibration_ = calibration; }
 
     auto ICM20948::set_accel_range(AccelRange range) -> ErrorT<void>
     {
@@ -179,11 +200,36 @@ namespace icm20948
     }
 
     /** Sensor Getters **/
-    auto ICM20948::get_accel() -> Vec3<float> { return acc_val_; }
+    auto ICM20948::get_accel() -> Vec3<float>
+    {
+        measurements_.acc_val = (raw_measurements_.raw_acc_val / acc_scale_ * EARTH_ACCEL) * calibration_.accel_scale +
+                                calibration_.accel_bias;
 
-    auto ICM20948::get_gyro() -> Vec3<float> { return gyro_val_; }
+        return measurements_.acc_val;
+    }
 
-    auto ICM20948::get_mag() -> Vec3<int> { return mag_val_; };
+    auto ICM20948::get_gyro() -> Vec3<float>
+    {
+        measurements_.gyro_val = (raw_measurements_.raw_gyro_val / gyro_scale_) + calibration_.gyro_bias;
+
+        return measurements_.gyro_val;
+    }
+
+    auto ICM20948::get_mag() -> Vec3<float>
+    {
+        measurements_.mag_val =
+            calibration_.mag_soft_iron * (raw_measurements_.raw_mag_val - calibration_.mag_hard_iron);
+
+        return measurements_.mag_val;
+    };
+
+    auto ICM20948::get_temp() -> float
+    {
+        measurements_.temp_val =
+            ((static_cast<int>(raw_measurements_.raw_temp_val) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
+
+        return measurements_.temp_val;
+    }
 
     auto ICM20948::who_am_i() -> ErrorT<uint8_t>
     {
@@ -191,6 +237,16 @@ namespace icm20948
         TRY_STORE(i2c_instance.read<registers::WHO_AM_I>(), who);
         return who.bits;
     }
+
+    auto ICM20948::get_measurement(Measurement& msr) -> void
+    {
+        msr.acc_val = get_accel();
+        msr.gyro_val = get_gyro();
+        msr.mag_val = get_mag();
+        msr.temp_val = get_temp();
+    }
+
+    auto ICM20948::get_raw_measurements(RawMeasurement& raw_meas) -> void { raw_meas = raw_measurements_; }
 
     /** private **/
 
@@ -246,11 +302,6 @@ namespace icm20948
         }
 
         return std::unexpected(ICMErrorT::i2c_mag_timeout);
-    }
-    /** helpers **/
-    auto ICM20948::calc_temp_from_raw(int16_t raw) -> float
-    {
-        return ((static_cast<int>(raw) - ROOM_TEMP_OFFS) / TEMP_SENS) + ROOM_TEMP_OFFS;
     }
 
 } // namespace icm20948

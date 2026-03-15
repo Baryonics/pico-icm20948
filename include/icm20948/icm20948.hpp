@@ -1,5 +1,6 @@
 #pragma once
 
+#include "calibration.hpp"
 #include "config_enums.hpp"
 #include "errors.hpp"
 #include "i2c.hpp"
@@ -11,14 +12,12 @@
 #include "registers/userbank2.hpp"
 #include "registers/userbank3.hpp"
 #include <bit>
-#include <cstddef>
 #include <cstdint>
-#include <hardware/i2c.h>
-#include <pico/types.h>
 
 namespace icm20948
 {
     constexpr inline float EARTH_ACCEL = 9.81;
+
     struct Health
     {
         // WHO_AM_I
@@ -32,18 +31,41 @@ namespace icm20948
         // PWR_MGMT_2
         bool is_accel_en{};
         bool is_gyro_en{};
+        bool is_all_zero{};
+    };
+
+    struct RawMeasurement
+    {
+        Vec3<int16_t> raw_acc_val{};
+        Vec3<int16_t> raw_gyro_val{};
+        Vec3<int16_t> raw_mag_val{};
+        uint16_t raw_temp_val{};
+    };
+
+    struct Measurement
+    {
+        Vec3<float> acc_val{};
+        Vec3<float> gyro_val{};
+        Vec3<float> mag_val{};
+        float temp_val{};
     };
 
     class ICM20948
     {
       public:
-        ICM20948(i2c_inst_t* rp_i2c);
+        explicit ICM20948(i2c_inst_t* rp_i2c);
         Health health{};
 
         ErrorT<void> update();
         ErrorT<void> update_health();
 
         ErrorT<void> init();
+        ErrorT<void> wake();
+
+        void calibrate_accel(const Vec3<float>& bias, const Vec3<float>& scale);
+        void calibrate_gyro(const Vec3<float>& bias);
+        void calibrate_mag(const Vec3<float>& hard_iron, const Mat3<float>& soft_iron);
+        void calibrate(const calibration::Calibration& calibration);
 
         ErrorT<void> set_accel_range(AccelRange range);
         ErrorT<void> set_gyro_range(GyroRange range);
@@ -51,7 +73,10 @@ namespace icm20948
         /** sensor getters **/
         Vec3<float> get_gyro();
         Vec3<float> get_accel();
-        Vec3<int> get_mag();
+        Vec3<float> get_mag();
+        float get_temp();
+        void get_measurement(Measurement& msr);
+        void get_raw_measurements(RawMeasurement& raw_msr);
 
         ErrorT<uint8_t> who_am_i();
         ErrorT<uint8_t> mag_who_am_i();
@@ -63,19 +88,19 @@ namespace icm20948
         static constexpr int ROOM_TEMP_OFFS = 21;
 
         I2C i2c_instance;
-        Vec3<float> acc_val_{};
-        Vec3<float> gyro_val_{};
-        Vec3<int> mag_val_{};
-        float temp_val_{};
+
+        calibration::Calibration calibration_{};
+
+        RawMeasurement raw_measurements_{};
+        Measurement measurements_{};
 
         float acc_scale_{};
         float gyro_scale_{};
         uint8_t temp_scale_{};
 
-        /** helpers **/
-        float calc_temp_from_raw(int16_t raw_temp);
         ErrorT<void> enable_mag();
 
+        /** helpers **/
         template <typename ValType>
             requires registers::reg_type<ValType>
         int16_t get_value()
