@@ -6,7 +6,6 @@ import serial
 import common.serial_data as s_data
 import pandas as pd
 import argparse
-import math
 
 
 def parse_args():
