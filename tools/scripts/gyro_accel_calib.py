@@ -30,25 +30,35 @@ def parse_args():
 
 
 def calc_accel_scale(
-    pos_acc_val: npt.NDArray[np.float64], neg_acc_val: npt.NDArray[np.float64]
+    x_pos_acc_val: npt.NDArray[np.float64],
+    x_neg_acc_val: npt.NDArray[np.float64],
+    y_pos_acc_val: npt.NDArray[np.float64],
+    y_neg_acc_val: npt.NDArray[np.float64],
+    z_pos_acc_val: npt.NDArray[np.float64],
+    z_neg_acc_val: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]:
     return np.array(
         [
-            (pos_acc_val[0] - neg_acc_val[0]) / (2 * 9.81),
-            (pos_acc_val[1] - neg_acc_val[1]) / (2 * 9.81),
-            (pos_acc_val[2] - neg_acc_val[2]) / (2 * 9.81),
+            (x_pos_acc_val[0] - x_neg_acc_val[0]) / (2 * 9.81),
+            (y_pos_acc_val[1] - y_neg_acc_val[1]) / (2 * 9.81),
+            (z_pos_acc_val[2] - z_neg_acc_val[2]) / (2 * 9.81),
         ]
     )
 
 
 def calc_accel_bias(
-    pos_acc_val: npt.NDArray[np.float64], neg_acc_val: npt.NDArray[np.float64]
+    x_pos_acc_val: npt.NDArray[np.float64],
+    x_neg_acc_val: npt.NDArray[np.float64],
+    y_pos_acc_val: npt.NDArray[np.float64],
+    y_neg_acc_val: npt.NDArray[np.float64],
+    z_pos_acc_val: npt.NDArray[np.float64],
+    z_neg_acc_val: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]:
     return np.array(
         [
-            (pos_acc_val[0] + neg_acc_val[0]) / 2,
-            (pos_acc_val[1] + neg_acc_val[1]) / 2,
-            (pos_acc_val[2] + neg_acc_val[2]) / 2,
+            (x_pos_acc_val[0] + x_neg_acc_val[0]) / 2,
+            (y_pos_acc_val[1] + y_neg_acc_val[1]) / 2,
+            (z_pos_acc_val[2] + z_neg_acc_val[2]) / 2,
         ]
     )
 
@@ -134,7 +144,26 @@ def main():
     mean_neg_gyro_y = calc_mean_gyro_from_sample(neg_y_data)
     mean_neg_gyro_z = calc_mean_gyro_from_sample(neg_z_data)
 
-    accel_scale = calc_accel_scale(mean_pos_acc_x)
+    acc_scale = calc_accel_scale(
+        mean_pos_acc_x,
+        mean_neg_acc_x,
+        mean_pos_acc_y,
+        mean_neg_acc_y,
+        mean_pos_acc_z,
+        mean_neg_acc_z,
+    )
+
+    acc_bias = calc_accel_bias(
+        mean_pos_acc_x,
+        mean_neg_acc_x,
+        mean_pos_acc_y,
+        mean_neg_acc_y,
+        mean_pos_acc_z,
+        mean_neg_acc_z,
+    )
+
+    print("bias: ", acc_bias)
+    print("scale: ", acc_scale)
 
 
 if __name__ == "__main__":
