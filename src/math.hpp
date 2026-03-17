@@ -102,7 +102,7 @@ namespace icm20948
 
         constexpr auto is_zero() -> bool
         {
-            if (x + y + y == 0)
+            if (x + y + z == 0)
                 return true;
             return false;
         }
