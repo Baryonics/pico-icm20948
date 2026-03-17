@@ -67,10 +67,6 @@ def calc_mean_acc_from_sample(samples: list[s_data.Sample]) -> npt.NDArray[np.fl
     return np.array([i.acc for i in samples]).mean(axis=0)
 
 
-def calc_mean_gyro_from_sample(samples: list[s_data.Sample]) -> npt.NDArray[np.float64]:
-    return np.array([i.gyro for i in samples]).mean(axis=0)
-
-
 def main():
     args = parse_args()
 
