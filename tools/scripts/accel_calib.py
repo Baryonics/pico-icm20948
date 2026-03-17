@@ -8,7 +8,7 @@ import serial
 def parse_args():
     parser = argparse.ArgumentParser(
         description="""
-    Calculate gyroscope and accelerometer calibration parameters.
+    Calculate accelerometer calibration parameters.
     """
     )
 
@@ -133,16 +133,10 @@ def main():
     mean_pos_acc_x = calc_mean_acc_from_sample(pos_x_data)
     mean_pos_acc_y = calc_mean_acc_from_sample(pos_y_data)
     mean_pos_acc_z = calc_mean_acc_from_sample(pos_z_data)
-    mean_pos_gyro_x = calc_mean_gyro_from_sample(pos_x_data)
-    mean_pos_gyro_y = calc_mean_gyro_from_sample(pos_y_data)
-    mean_pos_gyro_z = calc_mean_gyro_from_sample(pos_z_data)
 
     mean_neg_acc_x = calc_mean_acc_from_sample(neg_x_data)
     mean_neg_acc_y = calc_mean_acc_from_sample(neg_y_data)
     mean_neg_acc_z = calc_mean_acc_from_sample(neg_z_data)
-    mean_neg_gyro_x = calc_mean_gyro_from_sample(neg_x_data)
-    mean_neg_gyro_y = calc_mean_gyro_from_sample(neg_y_data)
-    mean_neg_gyro_z = calc_mean_gyro_from_sample(neg_z_data)
 
     acc_scale = calc_accel_scale(
         mean_pos_acc_x,
